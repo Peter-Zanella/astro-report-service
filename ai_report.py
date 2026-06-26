@@ -61,24 +61,66 @@ def build_facts(chart: Dict) -> str:
         f["panchang"] = {k: pan.get(k) for k in
                          ("tithi", "vara", "nakshatra", "yoga", "karana")}
 
-    # current dasha — structure varies; include whatever is present, trimmed
-    vim = chart.get("vimshottari")
-    if vim is not None:
-        f["vimshottari"] = _trim(vim)
+    # current dasha — key in chart is "dashas" (not "vimshottari")
+    dashas = chart.get("dashas") or chart.get("vimshottari")
+    if dashas is not None:
+        cur = dashas.get("current", {})
+        f["vimshottari_current"] = {
+            "mahadasha":       cur.get("maha"),
+            "antardasha":      cur.get("antar"),
+            "pratyantardasha": cur.get("pratyantar"),
+        }
+        # Include active antardasha dates for context
+        for maha_entry in dashas.get("mahadashas", []):
+            if maha_entry.get("active"):
+                f["vimshottari_current"]["mahadasha_end"] = str(maha_entry.get("end", ""))
+                for antar_entry in maha_entry.get("antardashas", []):
+                    if antar_entry.get("active"):
+                        f["vimshottari_current"]["antardasha_start"] = str(antar_entry.get("start", ""))
+                        f["vimshottari_current"]["antardasha_end"] = str(antar_entry.get("end", ""))
+                        for pad in antar_entry.get("pratyantardashas", []):
+                            if pad.get("active"):
+                                f["vimshottari_current"]["pratyantardasha_end"] = str(pad.get("end", ""))
+                        break
+                break
 
     f["meta"] = {"name": chart.get("meta", {}).get("name") if isinstance(chart.get("meta"), dict)
                  else None}
     return json.dumps(f, ensure_ascii=False, indent=1, default=str)
 
 
+def _extract_dasha(vim: dict) -> dict:
+    """Extract only the current dasha period (maha/antar/pratyantar) cleanly."""
+    if not isinstance(vim, dict):
+        return vim
+    result = {}
+    # Copy top-level scalar fields (current period labels, dates)
+    for k, v in vim.items():
+        if not isinstance(v, (dict, list)):
+            result[k] = v
+    # Include current mahadasha entry from the periods list
+    for key in ("current", "mahadasha", "maha"):
+        if key in vim and isinstance(vim[key], dict):
+            result[key] = {k: v for k, v in vim[key].items() if not isinstance(v, list)}
+    # Include antardasha current entry
+    for key in ("antardasha", "antar", "current_antar"):
+        if key in vim and isinstance(vim[key], dict):
+            result[key] = {k: v for k, v in vim[key].items() if not isinstance(v, list)}
+    # Include pratyantardasha
+    for key in ("pratyantardasha", "pratyantar", "current_pratyantar"):
+        if key in vim and isinstance(vim[key], dict):
+            result[key] = {k: v for k, v in vim[key].items() if not isinstance(v, list)}
+    return result
+
+
 def _trim(obj, depth=0):
     """Keep the dasha structure small so the prompt stays cheap."""
-    if depth > 2:
+    if depth > 3:
         return "…"
     if isinstance(obj, dict):
-        return {k: _trim(v, depth + 1) for k, v in list(obj.items())[:8]}
+        return {k: _trim(v, depth + 1) for k, v in list(obj.items())[:12]}
     if isinstance(obj, list):
-        return [_trim(x, depth + 1) for x in obj[:6]]
+        return [_trim(x, depth + 1) for x in obj[:8]]
     return obj
 
 
@@ -110,14 +152,21 @@ _SYS = {
            "Schreibe warm, klar und alltagstauglich auf Deutsch, ohne Fachjargon-Überladung "
            "(erkläre Begriffe kurz). Keine medizinischen, rechtlichen oder finanziellen "
            "Ratschläge, keine Angst- oder Schicksalssprache, keine garantierten Vorhersagen. "
-           "Gliedere den Text mit den vorgegebenen Abschnitts-Überschriften (als Markdown ##)."),
+           "Gliedere den Text mit den vorgegebenen Abschnitts-Überschriften (als Markdown ##). "
+           "Im Abschnitt 'Aktuelles Timing (Daśā)': verwende AUSSCHLIESSLICH die Planeten "
+           "aus dem Feld 'vimshottari_current' im JSON (mahadasha, antardasha, pratyantardasha). "
+           "Nenne diese exakt — erfinde KEINE anderen Planeten. Erkläre was diese Kombination "
+           "im Leben der Person gerade bedeutet, und erwähne bis wann die Antardaśā läuft."),
     "en": ("You are an experienced Vedic astrologer (Jyotiṣa) writing a personal birth-chart "
            "report. You interpret ONLY the already-calculated facts provided below. You do NOT "
            "compute or change any positions, signs, degrees or dates, and you invent nothing. "
            "Write warmly, clearly and practically in English, without jargon overload (briefly "
            "explain terms). No medical, legal or financial advice, no fear/fate language, no "
            "guaranteed predictions. Structure the text with the given section headings (as "
-           "Markdown ##)."),
+           "Markdown ##). In the 'Current timing (daśā)' section: use ONLY the planets from the "
+           "'vimshottari_current' field in the JSON (mahadasha, antardasha, pratyantardasha). "
+           "Name them exactly — do NOT invent other planets. Explain what this combination "
+           "means for the person's life right now, and mention when the antardaśā ends."),
 }
 
 
@@ -132,7 +181,7 @@ def build_prompt(facts: str, lang: str, depth: str) -> str:
 
 # ── 3. Call the Anthropic API ─────────────────────────────────────────────────
 def generate_interpretation(chart: Dict, lang: str = "de", depth: str = "premium",
-                            model: str = "claude-sonnet-4-6", max_tokens: int = 3000) -> str:
+                            model: str = "claude-sonnet-4-6", max_tokens: int = 0) -> str:
     """Return the written interpretation. depth ∈ {'basis','premium'}."""
     try:
         import anthropic
@@ -142,6 +191,8 @@ def generate_interpretation(chart: Dict, lang: str = "de", depth: str = "premium
         raise RuntimeError("Set ANTHROPIC_API_KEY in the environment.")
     if depth not in ("basis", "premium"):
         depth = "premium"
+    if max_tokens == 0:
+        max_tokens = 4000 if depth == "basis" else 8000
 
     facts = build_facts(chart)
     client = anthropic.Anthropic()
