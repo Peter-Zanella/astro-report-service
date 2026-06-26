@@ -1,4 +1,4 @@
-"""
+""
 ai_report.py — turns a COMPUTED chart (from astro_engine.generate_chart) into a
 written interpretation using the Anthropic API.
 
