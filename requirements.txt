@@ -4,4 +4,4 @@ stripe
 anthropic
 reportlab
 python-multipart
-pyswisseph
+pyswisseph==2.10.3.2
