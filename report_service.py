@@ -36,7 +36,7 @@ from html import escape
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from io import BytesIO
 
 import astro_engine as E
@@ -214,7 +214,7 @@ zusätzlich per E-Mail.</p>
 <div><label>Sprache</label><select name="lang"><option value="de">Deutsch</option>
 <option value="en">English</option></select></div></div>
 {depth_field}
-<button type="submit">Bericht erstellen</button>
+<button type="submit" onclick="this.disabled=true;this.textContent='⏳ Bericht wird erstellt…';this.form.submit()">Bericht erstellen</button>
 </form>
 <p class="muted">Geburtszeit unbekannt? 12:00 ist eine faire Näherung – Aszendent/Häuser
 sind dann weniger genau.</p>""")
@@ -294,24 +294,12 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
                   if email_ok else
                   '<p class="muted">E-Mail nicht konfiguriert – bitte unten herunterladen.</p>')
     ititle = "Persönliche Deutung" if lang == "de" else "Personal Reading"
-    dl_page = _page(info["label"], f"""
-<div class="ey"><span class="dot">◆</span> {escape(info["label"])}</div>
-<h1>Bericht bereit</h1>
-{email_note}
-<a href="/download/{session_id}" style="display:block;margin-top:22px;width:100%;
-background:#2b2118;color:#fdf6e9;padding:14px;border-radius:3px;
-font-weight:600;font-size:1rem;text-align:center;text-decoration:none;">
-⬇ PDF herunterladen</a>
-<a href="/view/{session_id}" style="display:block;margin-top:12px;width:100%;
-background:#1a1a35;color:#c9a84c;padding:14px;border-radius:3px;
-font-weight:600;font-size:1rem;text-align:center;text-decoration:none;
-border:1px solid rgba(201,168,76,0.3);">
-✦ Interaktive Ansicht öffnen</a>
-<p class="muted" style="margin-top:14px">Die Links sind nur kurzzeitig gültig.</p>""")
-    _PDF_CACHE[session_id] = (pdf, fn)
-    _HTML_CACHE[session_id] = chart_html.build_html(chart, interpretation=text,
-                                                    interpretation_title=ititle)
-    return HTMLResponse(dl_page)
+    html_view = chart_html.build_html(chart, interpretation=text,
+                                      interpretation_title=ititle)
+    _PDF_CACHE[session_id]  = (pdf, fn)
+    _HTML_CACHE[session_id] = html_view
+    # Redirect directly to the HTML view — it has a PDF download button built in
+    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}", status_code=303)
 
 
 if __name__ == "__main__":
@@ -341,5 +329,5 @@ def view_chart(session_id: str):
     if not html:
         return HTMLResponse(msg_html("Ansicht abgelaufen",
                             "Die interaktive Ansicht ist nicht mehr verfügbar. "
-                            "Bitte nutze den PDF-Download.", "err"), 404)
-    return HTMLResponse(html)
+                            "Bitte erstelle einen neuen Bericht.", "err"), 404)
+    return HTMLResponse(html)  # keep in cache (not popped)
