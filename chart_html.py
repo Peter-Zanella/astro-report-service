@@ -254,15 +254,15 @@ def build_html(chart: Dict, interpretation: Optional[str] = None,
     akv_planets = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"]
     akv_header = "<tr><th>Sign</th>" + "".join(f"<th>{PLANET_ABR[p]}</th>" for p in akv_planets) + "<th>Sarva</th></tr>"
     akv_rows = ""
-    sarva = akv.get("sarva", {})
+    sarva_list = akv.get("Sarva", [0]*12)
     for si in range(12):
-        sn = SIGNS[si]
         cells_akv = ""
         for p in akv_planets:
-            val = akv.get(p, {}).get(sn, "—")
+            plist = akv.get(p, [])
+            val = plist[si] if si < len(plist) else "—"
             cls = " akv-high" if isinstance(val, int) and val >= 5 else (" akv-low" if isinstance(val, int) and val <= 2 else "")
             cells_akv += f"<td class='{cls}'>{val}</td>"
-        sarva_val = sarva.get(sn, "—")
+        sarva_val = sarva_list[si] if si < len(sarva_list) else "—"
         akv_rows += f"<tr><td>{SIGN_ABR[si]}</td>{cells_akv}<td><strong>{sarva_val}</strong></td></tr>"
 
     # ── Panchang ──────────────────────────────────────────────────────────────
