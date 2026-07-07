@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interpretationsmethodik · AstroVeda Jyotiṣa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0d1f;--bg2:#13132a;--bg3:#1a1a35;--ac:#c9a84c;--tx:#e2ddf0;--mu:#8888bb;--bd:#2a2a4a;--gd:#4caf7d;--rd:#e05c5c}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;font-size:14px;line-height:1.7}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 20% 10%,rgba(155,143,212,.06) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 80%,rgba(201,168,76,.04) 0%,transparent 45%),var(--bg)}
+.pw{max-width:900px;margin:0 auto;padding:40px 20px 100px;position:relative;z-index:1}
+
+/* Nav */
+.topnav{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
+        border-bottom:1px solid var(--bd);margin-bottom:40px}
+.logo{font-family:'Cormorant Garamond',serif;color:var(--ac);font-size:1.2rem;text-decoration:none}
+.back{color:var(--mu);font-size:.8rem;text-decoration:none;transition:.15s}
+.back:hover{color:var(--ac)}
+
+/* Header */
+.doc-header{text-align:center;padding:20px 0 48px;border-bottom:1px solid var(--bd);margin-bottom:48px}
+.doc-eye{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ac);margin-bottom:10px}
+.doc-header h1{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;
+               color:var(--tx);margin-bottom:12px}
+.doc-header p{color:var(--mu);font-size:.9rem;max-width:580px;margin:0 auto;line-height:1.8}
+
+/* TOC */
+.toc{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:24px 28px;margin-bottom:48px}
+.toc h3{font-family:'Cormorant Garamond',serif;color:var(--ac);font-size:1rem;margin-bottom:14px}
+.toc ol{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.toc li{font-size:.82rem}
+.toc a{color:var(--mu);text-decoration:none;transition:.15s}
+.toc a:hover{color:var(--ac)}
+
+/* Sections */
+.msec{margin-bottom:56px;padding-bottom:40px;border-bottom:1px solid var(--bd)}
+.msec:last-child{border-bottom:none}
+.sec-num{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ac);margin-bottom:6px}
+.msec h2{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:400;
+          color:var(--tx);margin-bottom:16px}
+.msec h3{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--ac);
+          margin:24px 0 10px;padding-left:12px;border-left:2px solid var(--ac)}
+.msec p{color:var(--mu);font-size:.88rem;line-height:1.85;margin-bottom:12px}
+.msec p strong{color:var(--tx);font-weight:500}
+.msec ul,.msec ol{padding-left:18px;margin-bottom:14px;display:flex;flex-direction:column;gap:5px}
+.msec li{color:var(--mu);font-size:.86rem;line-height:1.75}
+.msec li strong{color:var(--tx)}
+
+/* Source boxes */
+.sources{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.src{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;font-size:.78rem}
+.src-title{color:var(--tx);font-weight:500;margin-bottom:3px}
+.src-detail{color:var(--mu);font-style:italic}
+
+/* Weighting table */
+.wtable{width:100%;border-collapse:collapse;font-size:.8rem;margin:14px 0}
+.wtable th{background:var(--bg3);color:var(--mu);font-size:.7rem;text-transform:uppercase;
+           letter-spacing:.07em;padding:8px 10px;text-align:left;border-bottom:1px solid var(--bd)}
+.wtable td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--mu)}
+.wtable td:first-child{color:var(--tx)}
+.w-h{color:var(--gd)!important}.w-m{color:var(--ac)!important}.w-l{color:var(--rd)!important}
+
+/* Note box */
+.note{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:8px;
+      padding:14px 18px;font-size:.82rem;color:var(--mu);margin:16px 0}
+.note strong{color:var(--ac)}
+</style>
+</head>
+<body><div class="pw">
+
+<nav class="topnav">
+  <a class="logo" href="index.de.html">AstroVeda</a>
+  <a class="back" href="index.de.html">← Zurück zur Hauptseite</a>
+</nav>
+
+<div class="doc-header">
+  <div class="doc-eye">Wissenschaftliche Grundlagen</div>
+  <h1>Interpretationsmethodik</h1>
+  <p>Die vollständige Methodik der AstroVeda Jyotiṣa-Berechnungen und -Deutungen — mit Angabe der klassischen Quellen und der angewendeten Prinzipien.</p>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>Inhaltsverzeichnis</h3>
+  <ol>
+    <li><a href="#grundlagen">Grundlagen: Siderischer Tierkreis & Ayanamsha</a></li>
+    <li><a href="#berechnung">Planetenberechnung: Swiss Ephemeris DE431</a></li>
+    <li><a href="#haeuser">Häusersystem: Whole-Sign Houses</a></li>
+    <li><a href="#deutungsreihenfolge">Deutungsreihenfolge & Gewichtung</a></li>
+    <li><a href="#rasi">D1 Rāśi: Deutung vom Lagna & vom Mond</a></li>
+    <li><a href="#nakshatra">Nakshatra: 27 Mondstationen</a></li>
+    <li><a href="#divisional">Divisionalhoroskope: D9, D10, D3, D4</a></li>
+    <li><a href="#aspekte">Aspekte: Graha Drishti & Rāśi Drishti</a></li>
+    <li><a href="#afflictions">Affliktionen: Combustion, Debilitation, Papakartari etc.</a></li>
+    <li><a href="#yogas">Yogas: Planetarische Konfigurationen</a></li>
+    <li><a href="#shadbala">Shad Bala: Sechsfache Planetenstärke</a></li>
+    <li><a href="#dasha">Viṃśottarī Daśā: Planetarische Zeitperioden</a></li>
+    <li><a href="#jaimini">Jaimini: Chara Karakas & Chara Daśā</a></li>
+    <li><a href="#varshaphala">Varshaphala: Solarreturn-Analyse</a></li>
+    <li><a href="#ashtakavarga">Ashtakavarga: Bindu-Stärkepunkte</a></li>
+    <li><a href="#panchang">Pañcāṅga: Fünf Zeitqualitäten</a></li>
+    <li><a href="#ki">KI-Deutung: Prinzipien & Grenzen</a></li>
+    <li><a href="#prasna">Prāśna-Methodik: Horārische Astrologie</a></li>
+    <li><a href="#finsternisse">Finsternisse: Grahaṇa & siderische Positionen</a></li>
+    <li><a href="#kompatibilitaet">Partner-Kompatibilität: Ashtakūṭa (Guṇa Milāna)</a></li>
+    <li><a href="#quellen">Klassische Quellen & Bibliographie</a></li>
+  </ol>
+</div>
+
+<!-- 1 -->
+<div class="msec" id="grundlagen">
+  <div class="sec-num">01</div>
+  <h2>Grundlagen: Siderischer Tierkreis & Ayanamsha</h2>
+  <p>Jyotiṣa verwendet den <strong>siderischen Tierkreis</strong> (Nirayana), der auf der tatsächlichen astronomischen Position der Fixsterne basiert — im Gegensatz zum tropischen Tierkreis der westlichen Astrologie, der auf den Jahreszeiten (Frühlingsäquinoktium) beruht.</p>
+  <p>Durch die <strong>Präzession der Erdachse</strong> (ca. 50.3" pro Jahr) bewegen sich die Äquinoktien langsam durch den Sternenhimmel. Der Differenzwinkel zwischen tropischem und siderischem Nullpunkt heisst <strong>Ayanamsha</strong>. Er beträgt heute ca. 23°–24° und wächst jährlich um ~0.014°.</p>
+
+  <h3>Lahiri Ayanamsha</h3>
+  <p>AstroVeda verwendet den <strong>Lahiri Ayanamsha</strong> (auch: Chitrapaksha Ayanamsha), den offiziellen Standard des Indischen Regierungs-Kalenderreformkomitees von 1956. Er definiert den siderischen Nullpunkt so, dass der Fixstern Spica (Citrā) bei 180°00' steht.</p>
+  <p>Berechnung: <code>Ayanamsha(JD) = 23.853056 + (5029.097·T + 1.558·T²) / 3600 mod 360</code>, wobei T = (JD - 2451545.0) / 36525 (Julianische Jahrhunderte seit J2000.0).</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Lahiri, N.C. (1984)</div><div class="src-detail">Indian Ephemeris and Nautical Almanac. Government of India, Calcutta.</div></div>
+    <div class="src"><div class="src-title">Government of India, Calendar Reform Committee (1956)</div><div class="src-detail">Report of the Calendar Reform Committee. CSIR, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="msec" id="berechnung">
+  <div class="sec-num">02</div>
+  <h2>Planetenberechnung: Swiss Ephemeris DE431</h2>
+  <p>AstroVeda berechnet alle Planetenpositionen mit der <strong>Swiss Ephemeris</strong> (Bibliothek: pyswisseph), die auf den JPL Development Ephemeris DE431 basiert — der derzeit präzisesten verfügbaren astronomischen Ephemeride für historische und moderne Berechnungen.</p>
+
+  <h3>Genauigkeit</h3>
+  <p>DE431 erreicht eine Genauigkeit von <strong>&lt;0.001 Bogensekunden</strong> für die klassischen Planeten (Sonne bis Saturn) über den Zeitraum von −13000 bis +17000 Jahren. Die Knotenpunkte Rahu und Ketu werden als mittlere (True Node) oder wahre Mondknoten berechnet — AstroVeda verwendet den <strong>True Node</strong>.</p>
+
+  <h3>Julianisches Datum & Zeitumrechnung</h3>
+  <p>Alle Berechnungen erfolgen intern im <strong>Julianischen Datum (JD)</strong> in Universalzeit (UT). Die Umrechnung von lokaler Ortszeit erfolgt über historisch korrekte Zeitzonen (IANA tz-Datenbank, zoneinfo), nicht über aktuelle UTC-Offsets. Dies ist besonders für historische Horoskope vor 1970 kritisch.</p>
+
+  <h3>Koordinatensystem</h3>
+  <p>Planetenlängen werden in <strong>ekliptikalen Längen</strong> (0°–360°) berechnet und dann um den Lahiri Ayanamsha reduziert: <code>sid_lon = (trop_lon − ayan) mod 360</code>. Zeichen und Positionen ergeben sich daraus als <code>sign_idx = floor(sid_lon / 30)</code>, <code>pos_in_sign = sid_lon mod 30</code>.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Moshier, S.L. / Astrodienst AG (1997–2024)</div><div class="src-detail">Swiss Ephemeris, Version 2.10. astro.com. Basiert auf JPL DE431 (Folkner et al., 2014).</div></div>
+    <div class="src"><div class="src-title">Folkner, W.M., Williams, J.G., Boggs, D.H. et al. (2014)</div><div class="src-detail">The Planetary and Lunar Ephemerides DE430 and DE431. IPN Progress Report 42-196, JPL/NASA.</div></div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="msec" id="haeuser">
+  <div class="sec-num">03</div>
+  <h2>Häusersystem: Whole-Sign Houses (Śrī Lagna)</h2>
+  <p>AstroVeda verwendet das <strong>Whole-Sign House System</strong> (Rāśi-System), das im klassischen Jyotiṣa dominiert: Das Zeichen, in dem der Aszendent (Lagna) steht, wird vollständig als 1. Haus gerechnet. Das nächste Zeichen im Uhrzeigersinn ist das 2. Haus, und so weiter.</p>
+  <p>Dieses System hat den Vorteil, dass <strong>Hausherren eindeutig</strong> sind (jedes Zeichen hat einen Herrn, jeder Herr regiert ein vollständiges Haus) und die klassischen Yoga-Regeln konsistent angewendet werden können.</p>
+
+  <h3>Bhava Chalit</h3>
+  <p>Zusätzlich wird das <strong>Bhava Chalit</strong> berechnet: ein System, bei dem die Häuser um den Aszendent-Grad zentriert sind (je 15° vor und nach dem exakten Aszendenten). Planeten nahe einer Hausgrenze können im Bhava Chalit in ein anderes Haus fallen als im Whole-Sign-System. Dies wird im Bericht als Bhava-Shift ausgewiesen.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara, Maharishi</div><div class="src-detail">Brihat Parashara Hora Shastra (BPHS), Kap. 6–7: Bhava Nirnaya. Klassischer Text, ca. 600–1000 n.Chr. Deutsche Übersetzung: Charak, S. (2006), Sagar Publications.</div></div>
+    <div class="src"><div class="src-title">Sharma, P. (2007)</div><div class="src-detail">Fundamentals of Astrology. Motilal Banarsidass, Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="msec" id="deutungsreihenfolge">
+  <div class="sec-num">04</div>
+  <h2>Deutungsreihenfolge & Gewichtung</h2>
+  <p>Die klassische Jyotiṣa-Methodik folgt einer <strong>hierarchischen Deutungsreihenfolge</strong>. AstroVeda implementiert sie wie folgt:</p>
+  <ol>
+    <li><strong>D1 Rāśi vom Lagna</strong> — äusseres Wesen, Körper, Lebensrichtung (primär)</li>
+    <li><strong>D1 Rāśi vom Mond (Chandra Lagna)</strong> — innere Welt, Emotionen (gleichrangig mit Lagna)</li>
+    <li><strong>Stärke-Screening</strong> — Shad Bala, Würde, Haus-Position (Kendra &gt; Trikona &gt; Upachaya &gt; Dusthana)</li>
+    <li><strong>Affliktions-Prüfung</strong> — bevor ein Yoga oder eine Stärke ausgewertet wird</li>
+    <li><strong>Aspekt-Analyse</strong> — welche Planeten sich gegenseitig beeinflussen</li>
+    <li><strong>D9 Navāṃśa</strong> — Bestätigung oder Relativierung von D1-Befunden</li>
+    <li><strong>D10, D3, D4</strong> — Spezialthemen Beruf, Vitalität, Immobilien</li>
+    <li><strong>Timing</strong> — Viṃśottarī Daśā, Chara Daśā</li>
+  </ol>
+
+  <h3>Gewichtungsmatrix</h3>
+  <table class="wtable">
+    <thead><tr><th>Faktor</th><th>Gewichtung</th><th>Begründung</th></tr></thead>
+    <tbody>
+      <tr><td>Lagna-Herr in Kendra/Trikona, exaltiert</td><td class="w-h">sehr hoch</td><td>Stärkster Grundton des Charts</td></tr>
+      <tr><td>Planet in eigenem Zeichen, im Kendra</td><td class="w-h">sehr hoch</td><td>Volle Stärke + günstiger Ort</td></tr>
+      <tr><td>Vargottama (D1=D9)</td><td class="w-h">hoch</td><td>Tiefenbestätigung der Energie</td></tr>
+      <tr><td>Planet im Lagna eines Divisional Charts</td><td class="w-h">hoch</td><td>Direkter Ausdruck des Divisional-Themas (D10-Lagna = berufliche Identität)</td></tr>
+      <tr><td>Raja Yoga (Kendra+Trikona-Herren)</td><td class="w-m">mittel–hoch</td><td>Abhängig von Shad Bala der Beteiligten</td></tr>
+      <tr><td>Planet in Dusthana (6/8/12) ohne Herrschaft</td><td class="w-l">reduziert</td><td>Energie weniger manifest</td></tr>
+      <tr><td>Combustion (&lt;6° Sonne)</td><td class="w-l">stark reduziert</td><td>Planet verliert Eigenständigkeit</td></tr>
+      <tr><td>Debilitation ohne Neecha Bhanga</td><td class="w-l">stark reduziert</td><td>Energie verdreht oder geschwächt</td></tr>
+      <tr><td>Papakartari (eingeklemmt)</td><td class="w-l">moderat reduziert</td><td>Energiezufuhr eingeschränkt</td></tr>
+    </tbody>
+  </table>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara, Maharishi — BPHS, Kap. 27–28</div><div class="src-detail">Shad Bala — Sechsfache Planetenstärke als Gewichtungsgrundlage.</div></div>
+    <div class="src"><div class="src-title">Mantreswara (ca. 1400 n.Chr.)</div><div class="src-detail">Phaladeepika, Kap. 1–3: Grundprinzipien der Deutungsgewichtung. Übers.: Santhanam, R. (1993), Ranjan Publications.</div></div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="msec" id="rasi">
+  <div class="sec-num">05</div>
+  <h2>D1 Rāśi: Deutung vom Lagna & vom Mond</h2>
+
+  <h3>Deutung vom Lagna (Aszendent)</h3>
+  <p>Das <strong>Lagna</strong> (Aszendent) ist der Punkt am Osthorizont zum Geburtszeitpunkt. Es definiert:</p>
+  <ul>
+    <li>Das <strong>1. Haus</strong>: Körper, Persönlichkeit, Lebensausrichtung</li>
+    <li>Den <strong>Lagna-Herrn</strong>: Sein Zeichen, Haus und Würde bestimmen die Grundvitalität</li>
+    <li>Die <strong>Hausherrschaften</strong>: Welcher Planet regiert welches Lebensthema</li>
+  </ul>
+  <p>Jede Planetendeutung beginnt mit der Frage: <em>Welche Häuser regiert dieser Planet vom Lagna aus, und welche Häuser besetzt er?</em></p>
+  <div class="note"><strong>Lagna-Pada:</strong> Da das Lagna einen exakten Grad besitzt, liegt es — wie jeder Planet — in einem konkreten <strong>Nakshatra und Pada</strong>. AstroVeda zeigt dieses Lagna-Pada mit der vollständigen 108-Pada-Deutung an (siehe Abschnitt 06). Der Pada des Aszendenten färbt die Grundnatur des gesamten Horoskops und ist damit einer der aussagekräftigsten Einzelpunkte der Karte.</div>
+
+  <h3>Deutung vom Mond (Chandra Lagna)</h3>
+  <p>Gleichrangig zur Lagna-Deutung wird das gesamte Chart vom <strong>Mond</strong> aus neu gezählt. Der Mond repräsentiert den <strong>Manas</strong> (Geist/Emotionen). Das Mond-Zeichen wird als 1. Haus gerechnet, alle anderen Häuser entsprechend verschoben.</p>
+  <p>Klassische Regel: Ein Yoga gilt als besonders stark, wenn er sowohl vom Lagna als auch vom Mond aus wirksam ist. Ein Planet, der vom Lagna aus das 6. Haus besetzt, aber vom Mond aus das 9. Haus, zeigt: äusserlich herausfordernd, innerlich bereichernd.</p>
+
+  <h3>Häuser und ihre Bedeutung</h3>
+  <ul>
+    <li><strong>Kendra (1,4,7,10)</strong> — Säulen des Lebens: Persönlichkeit, Heim, Partner, Beruf</li>
+    <li><strong>Trikona (1,5,9)</strong> — Glücks- und Dharma-Häuser</li>
+    <li><strong>Upachaya (3,6,10,11)</strong> — Wachstumshäuser: verbessern sich mit der Zeit</li>
+    <li><strong>Dusthana (6,8,12)</strong> — Häuser der Herausforderung: Krankheit, Tod, Verlust</li>
+    <li><strong>Maraka (2,7)</strong> — Lebensentziehende Häuser</li>
+  </ul>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 11–15</div><div class="src-detail">Bhava-Deutung, Lordschaften, Kendra-Trikona-Prinzip.</div></div>
+    <div class="src"><div class="src-title">Varahamihira (505–587 n.Chr.)</div><div class="src-detail">Brihat Jataka, Kap. 1–5. Übers.: Subrahmanya Sastri, P.S. (1929), Bangalore.</div></div>
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="msec" id="nakshatra">
+  <div class="sec-num">06</div>
+  <h2>Nakshatra: 27 Mondstationen</h2>
+  <p>Der siderische Tierkreis wird in <strong>27 Nakshatra</strong> (Mondstationen) zu je 13°20' eingeteilt. Jedes Nakshatra hat einen <strong>Herrn</strong> (nach Viṃśottarī-System), einen <strong>Devata</strong> (Gottheit) und eine spezifische psychologische Qualität.</p>
+  <p>Jedes Nakshatra wird in 4 <strong>Pada</strong> (Viertel) zu je 3°20' unterteilt. Die Pada korrespondieren mit den Navāṃśa-Zeichen.</p>
+
+  <h3>Nakshatra-Referenztabelle</h3>
+  <p>Jedes Nakshatra hat vier Ebenen: den <strong>Dasha-Herrn</strong> (Viṃśottarī-System), die <strong>Devata</strong> (Gottheit, die die spirituelle Qualität verkörpert), das <strong>Symbol</strong> (archetypisches Bild) und die <strong>Kernqualität</strong>. Die Devata zeigt die hinter dem Nakshatra wirkende kosmische Kraft — eine Person, deren Mond oder Lagna in diesem Nakshatra liegt, hat eine natürliche Resonanz zu dieser Gottheit.</p>
+  <table class="wtable">
+    <thead><tr><th>#</th><th>Nakshatra</th><th>Herr</th><th>Devata</th><th>Symbol</th><th>Kernqualität</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Ashvini</td><td>Ketu</td><td>Ashvini Kumaras (Göttliche Heiler)</td><td>Pferdekopf</td><td>Aufbruch, Heilung, Schnelligkeit</td></tr>
+      <tr><td>2</td><td>Bharani</td><td>Venus</td><td>Yama (Gott des Dharma &amp; Todes)</td><td>Yoni</td><td>Transformation, Tragen, Schöpfung</td></tr>
+      <tr><td>3</td><td>Krittika</td><td>Sun</td><td>Agni (Feuergott)</td><td>Rasiermesser / Flamme</td><td>Reinigung, Schärfe, Führung</td></tr>
+      <tr><td>4</td><td>Rohini</td><td>Moon</td><td>Brahma (Schöpfer)</td><td>Ochsenkarren / Banyanbaum</td><td>Fruchtbarkeit, Schönheit, Wachstum</td></tr>
+      <tr><td>5</td><td>Mrigashira</td><td>Mars</td><td>Soma (Mondgott)</td><td>Hirschkopf</td><td>Suche, Neugier, Wandel</td></tr>
+      <tr><td>6</td><td>Ardra</td><td>Rahu</td><td>Rudra (Sturmgott)</td><td>Träne / Diamant</td><td>Sturm, Transformation, Intellekt</td></tr>
+      <tr><td>7</td><td>Punarvasu</td><td>Jupiter</td><td>Aditi (Mutter der Götter)</td><td>Köcher mit Pfeilen</td><td>Erneuerung, Güte, Heimkehr</td></tr>
+      <tr><td>8</td><td>Pushya</td><td>Saturn</td><td>Brihaspati (Guru der Götter)</td><td>Blüte / Kuhseuter</td><td>Nahrung, Struktur, Fürsorge</td></tr>
+      <tr><td>9</td><td>Ashlesha</td><td>Mercury</td><td>Nagas (Schlangengottheiten)</td><td>Spiralschlange</td><td>Tiefe, Intuition, Psychologie</td></tr>
+      <tr><td>10</td><td>Magha</td><td>Ketu</td><td>Pitrs (Ahnen)</td><td>Königsthron</td><td>Ahnen, Königtum, Würde</td></tr>
+      <tr><td>11</td><td>Purva Phalguni</td><td>Venus</td><td>Bhaga (Gott des Glücks)</td><td>Vorderbeine des Bettes</td><td>Freude, Kreativität, Genuss</td></tr>
+      <tr><td>12</td><td>Uttara Phalguni</td><td>Sun</td><td>Aryaman (Gott der Verträge)</td><td>Hinterbeine des Bettes</td><td>Vertrag, Dienst, Partnerschaft</td></tr>
+      <tr><td>13</td><td>Hasta</td><td>Moon</td><td>Savitar (Schöpferische Sonne)</td><td>Offene Hand</td><td>Geschicklichkeit, Heilung, Pragmatismus</td></tr>
+      <tr><td>14</td><td>Chitra</td><td>Mars</td><td>Tvashtar / Vishwakarma (Göttlicher Architekt)</td><td>Leuchtende Perle</td><td>Schönheit, Glanz, Kunst</td></tr>
+      <tr><td>15</td><td>Svati</td><td>Rahu</td><td>Vayu (Windgott)</td><td>Junger Pflanzenschössling</td><td>Unabhängigkeit, Beweglichkeit</td></tr>
+      <tr><td>16</td><td>Vishakha</td><td>Jupiter</td><td>Indra-Agni (Blitz und Feuer)</td><td>Triumphbogen</td><td>Ziel, Entschlossenheit, Zweck</td></tr>
+      <tr><td>17</td><td>Anuradha</td><td>Saturn</td><td>Mitra (Gott der Freundschaft)</td><td>Lotusblüte</td><td>Treue, Gemeinschaft, Hingabe</td></tr>
+      <tr><td>18</td><td>Jyeshtha</td><td>Mercury</td><td>Indra (König der Götter)</td><td>Kreisförmiges Amulett / Schirm</td><td>Älteste, Schutz, Macht</td></tr>
+      <tr><td>19</td><td>Mula</td><td>Ketu</td><td>Nirrti (Göttin der Auflösung)</td><td>Gebundene Wurzeln</td><td>Wurzeln, Auflösung, Wahrheit</td></tr>
+      <tr><td>20</td><td>Purva Ashadha</td><td>Venus</td><td>Apas (Wassergottheit)</td><td>Fächer / Elefantenzahn</td><td>Sieg, Reinigung, Mut</td></tr>
+      <tr><td>21</td><td>Uttara Ashadha</td><td>Sun</td><td>Vishvedevas (Universale Götter)</td><td>Elefantenzahn / Bettstatt</td><td>Endgültiger Sieg, Tugend</td></tr>
+      <tr><td>22</td><td>Shravana</td><td>Moon</td><td>Vishnu (Erhalter)</td><td>Drei Fußspuren / Ohr</td><td>Hören, Lernen, Verbindung</td></tr>
+      <tr><td>23</td><td>Dhanishtha</td><td>Mars</td><td>Ashta Vasus (Acht Elementargötter)</td><td>Trommel / Flöte</td><td>Reichtum, Rhythmus, Stärke</td></tr>
+      <tr><td>24</td><td>Shatabhisha</td><td>Rahu</td><td>Varuna (Gott der kosmischen Gewässer)</td><td>Leerer Kreis / Tausend Blüten</td><td>Heilung, Geheimnis, Forschung</td></tr>
+      <tr><td>25</td><td>Purva Bhadrapada</td><td>Jupiter</td><td>Aja Ekapada (Einbeiniger Ziegengott)</td><td>Vorderbeine des Grabgestells</td><td>Feuer, Transformation, Dualität</td></tr>
+      <tr><td>26</td><td>Uttara Bhadrapada</td><td>Saturn</td><td>Ahir Budhnya (Tiefenwasser-Schlange)</td><td>Hinterbeine des Grabgestells</td><td>Tiefe, Geduld, kosmische Ordnung</td></tr>
+      <tr><td>27</td><td>Revati</td><td>Mercury</td><td>Pushan (Nährender, Beschützer der Reisenden)</td><td>Fisch / Paar Fische / Trommel</td><td>Fürsorge, Führung, Vollendung</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><strong>Devata & Ishta Devata:</strong> Die Devata des Geburts-Nakshatras (Janma Nakshatra des Mondes) ist nach klassischer Lehre eine der stärksten Hinweise auf die Ishta Devata — die persönliche Gottheit der Seele. Parallel dazu zeigt die Devata des Nakshatras, in dem der Ātmakāraka im D9-Lagna steht, den spirituellen Kernauftrag des Lebens (Jaimini-System).</div>
+
+  <h3>Namakṣara — Die Namenssilben der Padas</h3>
+  <p>Jedes Nakshatra teilt sich in <strong>vier Padas</strong> (Viertel) zu je 3°20'. Da 27 × 4 = <strong>108 Padas</strong> ergeben (die heilige Zahl der vedischen Tradition), entspricht jeder Pada genau einem Navāṃśa-Abschnitt — Pada und D9 sind dieselbe 3°20'-Einheit. Nach dem <strong>Swara Siddhānta</strong> (der Lehre der Klangsilben) trägt jeder Pada eine bestimmte <strong>Sanskrit-Silbe (Akṣara)</strong>, die traditionell den ersten Laut des Vornamens bestimmt (Nāmakaraṇa Saṃskāra, die Namensgebungs-Zeremonie). Die Silbe des Janma-Nakshatra-Pada des Mondes ist die <strong>Nāma-Nakshatra</strong> — sie soll den Menschen mit seiner Geburtsenergie in Resonanz bringen.</p>
+  <table class="wtable">
+    <thead><tr><th>Nakshatra</th><th>Pada 1</th><th>Pada 2</th><th>Pada 3</th><th>Pada 4</th><th>Navāṃśa-Zeichen (P1→P4)</th></tr></thead>
+    <tbody>
+      <tr><td>Ashvini</td><td>Chu</td><td>Che</td><td>Cho</td><td>La</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Bharani</td><td>Li</td><td>Lu</td><td>Le</td><td>Lo</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Krittika</td><td>A</td><td>I</td><td>U</td><td>E</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Rohini</td><td>O</td><td>Va/Ba</td><td>Vi/Bi</td><td>Vu/Bu</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Mrigashira</td><td>Ve/Be</td><td>Vo/Bo</td><td>Ka</td><td>Ki</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Ardra</td><td>Ku</td><td>Gha</td><td>Ng</td><td>Chha</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Punarvasu</td><td>Ke</td><td>Ko</td><td>Ha</td><td>Hi</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Pushya</td><td>Hu</td><td>He</td><td>Ho</td><td>Da</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Ashlesha</td><td>Di</td><td>Du</td><td>De</td><td>Do</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Magha</td><td>Ma</td><td>Mi</td><td>Mu</td><td>Me</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Purva Phalguni</td><td>Mo</td><td>Ta</td><td>Ti</td><td>Tu</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Uttara Phalguni</td><td>Te</td><td>To</td><td>Pa</td><td>Pi</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Hasta</td><td>Pu</td><td>Sha</td><td>Na</td><td>Tha</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Chitra</td><td>Pe</td><td>Po</td><td>Ra</td><td>Ri</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Svati</td><td>Ru</td><td>Re</td><td>Ro</td><td>Ta</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Vishakha</td><td>Ti</td><td>Tu</td><td>Te</td><td>To</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Anuradha</td><td>Na</td><td>Ni</td><td>Nu</td><td>Ne</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Jyeshtha</td><td>No</td><td>Ya</td><td>Yi</td><td>Yu</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Mula</td><td>Ye</td><td>Yo</td><td>Bha</td><td>Bhi</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Purva Ashadha</td><td>Bhu</td><td>Dha</td><td>Pha</td><td>Dha</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Uttara Ashadha</td><td>Bhe</td><td>Bho</td><td>Ja</td><td>Ji</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Shravana</td><td>Ju/Khi</td><td>Je/Khu</td><td>Jo/Khe</td><td>Gha/Kho</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Dhanishtha</td><td>Ga</td><td>Gi</td><td>Gu</td><td>Ge</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Shatabhisha</td><td>Go</td><td>Sa</td><td>Si</td><td>Su</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+      <tr><td>Purva Bhadrapada</td><td>Se</td><td>So</td><td>Da</td><td>Di</td><td>Aries · Taurus · Gemini · Cancer</td></tr>
+      <tr><td>Uttara Bhadrapada</td><td>Du</td><td>Tha</td><td>Jha</td><td>Da/Tra</td><td>Leo · Virgo · Libra · Scorpio</td></tr>
+      <tr><td>Revati</td><td>De</td><td>Do</td><td>Cha</td><td>Chi</td><td>Sagittarius · Capricorn · Aquarius · Pisces</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><strong>Pada-Struktur & Purushartha:</strong> Die vier Padas folgen einem festen elementaren Muster: <strong>Pada 1</strong> fällt stets in ein Feuer-Navāṃśa (Dharma, Schöpfung), <strong>Pada 2</strong> in ein Erd-Navāṃśa (Artha, Erhaltung), <strong>Pada 3</strong> in ein Luft-Navāṃśa (Kāma, Intellekt) und <strong>Pada 4</strong> in ein Wasser-Navāṃśa (Mokṣa, Auflösung). Der Pada verändert nicht das Nakshatra oder seine Devata — er zeigt den <em>Kanal</em>, durch den die Nakshatra-Energie fliesst. AstroVeda berechnet Pada und Namakṣara automatisch aus der exakten Mondposition und zeigt sie im Planeten-Subtab an.</div>
+
+  <h3>Die 108-Pada-Deutungsdatenbank</h3>
+  <p>AstroVeda hinterlegt für <strong>jeden der 108 Padas</strong> (27 Nakshatra × 4) eine eigenständige, ausformulierte Deutung. Jeder Pada wird über <strong>16 Deutungsfelder</strong> erschlossen: Grundcharakter, Motivation, Psychologie, Kommunikation, Talente, Beruf, Finanzen, Beziehungen, Familie, Spiritualität, Schattenseiten, Entwicklungsweg, Navāṃśa-Einfluss, Planetentyp-Wirkung, Schlüsselwörter und eine zusammenfassende Berichtsformulierung.</p>
+  <p>Die Deutung eines Pada entsteht aus der Verbindung dreier Ebenen: der <strong>Grundqualität des Nakshatra</strong> (Herr, Devata, Symbol), dem <strong>Navāṃśa-Zeichen des Pada</strong> (das die Nakshatra-Energie elementar färbt) und dem <strong>Purushartha-Kanal</strong> (Dharma/Artha/Kāma/Mokṣa). So erhält etwa Ashwini Pada 1 (Widder-Navāṃśa, Feuer) eine tatkräftig-pionierhafte Färbung, während Ashwini Pada 4 (Krebs-Navāṃśa, Wasser) dieselbe Heiler-Energie emotional und fürsorglich kanalisiert.</p>
+  <p>Diese Deutungen sind <strong>statisch hinterlegt</strong> (nicht KI-generiert) und werden im Planeten-Tab für jeden Planeten sowie für das Lagna expandierbar angezeigt — ausschlaggebend ist stets die exakte, aus Swiss Ephemeris berechnete Position.</p>
+  <div class="note"><strong>Navāṃśa-Konsistenz:</strong> Da Pada und Navāṃśa dieselbe 3°20'-Einheit sind, ist die Pada-Deutung immer navāṃśa-kohärent. Ein exaltiertes oder im eigenen Zeichen stehendes Navāṃśa (Vargottama-Nähe) wird im Feld »Planetentyp-Wirkung« der jeweiligen Pada-Deutung berücksichtigt.</div>
+
+  <div class="sources">
+    <div class="src"><div class="src-title">Swara Siddhānta / Nāmakaraṇa Saṃskāra</div><div class="src-detail">Klassische Zuordnung der 108 Pada-Silben für die vedische Namensgebung.</div></div>
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 3–4: Nakshatra & Pada</div><div class="src-detail">Grundlagen der Pada-Berechnung und Navāṃśa-Zuordnung.</div></div>
+  </div>
+</div>
+
+<!-- 7 -->
+<div class="msec" id="divisional">
+  <div class="sec-num">07</div>
+  <h2>Divisionalhoroskope (Varga Charts)</h2>
+  <p>Divisionalhoroskope entstehen durch Unterteilung der 30° eines Zeichens in gleichmässige Abschnitte. Ein Planet nimmt je nach seinem genauen Grad ein anderes Zeichen im Divisionalchart ein. Sie zeigen spezifische Lebensbereiche mit höherer Auflösung.</p>
+
+  <h3>D9 Navāṃśa — Seelenebene & Ehe</h3>
+  <p>Jedes Zeichen wird in <strong>9 Abschnitte</strong> zu je 3°20' geteilt. Der Navāṃśa gilt als <em>das wichtigste Divisionalhoroskop</em> — er zeigt die <strong>innere Kraft</strong> eines Planeten, seine spirituelle Reife und das Ehekarma.</p>
+  <p><strong>Vargottama</strong>: Ein Planet, der im D1 und D9 im gleichen Zeichen steht, gilt als besonders stark — seine D1-Qualitäten sind tief verwurzelt.</p>
+  <p>Deutungsregel: Ein in D1 schwacher Planet (niedrige Würde) der in D9 stark ist, zeigt latente Kraft die sich mit der Zeit entfaltet. Ein in D1 starker Planet der in D9 schwach ist, zeigt oberflächliche Stärke.</p>
+
+  <h3>D10 Daśāṃśa — Beruf & öffentliche Rolle</h3>
+  <p>Jedes Zeichen in <strong>10 Abschnitte</strong> zu je 3°. Der D10 zeigt das berufliche Karma, die öffentliche Wirkung und die professionelle Erfüllung. <strong>Sun, Saturn und der 10. Haus-Herr</strong> sind hier besonders relevant.</p>
+
+  <h3>D3 Drekkāna — Vitalität & Geschwister</h3>
+  <p>Jedes Zeichen in <strong>3 Abschnitte</strong> zu je 10°. Der D3 zeigt Vitalität, Ausdauer, Geschwisterbeziehungen und Tapferkeit. Mars ist hier der primäre Signifikator.</p>
+
+  <h3>Die 36 Drekkāna-Symbole (Varahamihira / Kelleher)</h3>
+  <p>Varahamihira beschreibt in <em>Brihat Jataka</em>, Kap. 27 (Drekkanadhyaya) 36 lebendige Symbolbilder für jedes Drekkāna — ähnlich den Tarot-Arkana, reich an psychologischer Symbolkraft. Jim Kelleher hat diese klassischen Bilder in der modernen Jyotiṣa-Praxis systematisiert und für die Beratungsarbeit erschlossen. Der Aszendent-Drekkāna (in welchem der 36 Abschnitte das Lagna fällt) zeigt den körperlichen Ausdruckstyp und eine tiefere Persönlichkeitsschicht jenseits von Zeichen und Nakshatra.</p>
+  <table class="wtable">
+    <thead><tr><th>Zeichen</th><th>Drekkāna</th><th>Grad</th><th>Symbol (nach Varahamihira/BJ Kap. 27)</th></tr></thead>
+    <tbody>
+      <tr><td>Aries 1</td><td>1</td><td>0°–10°</td><td>Schwarzer Mann mit weissem Lendentuch — furchtgebietend, schutzbereit, kampfbereit</td></tr>
+      <tr><td>Aries 2</td><td>2</td><td>10°–20°</td><td>Frau mit Schlangenleib — anmutig, gefährlich, verführerisch</td></tr>
+      <tr><td>Aries 3</td><td>3</td><td>20°–30°</td><td>Mann im Schmuck, auf Throne sitzend — Stärke, Autorität, Herrschaft</td></tr>
+      <tr><td>Taurus 1</td><td>4</td><td>0°–10°</td><td>Frau mit Schmuck und Blumen — Anmut, Sinnlichkeit, Frieden</td></tr>
+      <tr><td>Taurus 2</td><td>5</td><td>10°–20°</td><td>Mann mit landwirtschaftlichem Gerät, arbeitend — Ausdauer, Bodenständigkeit</td></tr>
+      <tr><td>Taurus 3</td><td>6</td><td>20°–30°</td><td>Schlange — verborgene Kraft, Gefahr, Transformation</td></tr>
+      <tr><td>Gemini 1</td><td>7</td><td>0°–10°</td><td>Frau mit Schmuck — schön, klar, kommunikativ</td></tr>
+      <tr><td>Gemini 2</td><td>8</td><td>10°–20°</td><td>Mann mit Bogen und Pfeil, auf Pferd — Aktivität, Bewegung, Zielstrebigkeit</td></tr>
+      <tr><td>Gemini 3</td><td>9</td><td>20°–30°</td><td>Goldgeschmückter Mann im Lotus — Würde, spirituelle Reinheit</td></tr>
+      <tr><td>Cancer 1</td><td>10</td><td>0°–10°</td><td>Mann im Wasser mit Schlangen — emotionale Tiefe, Schutz der Seele</td></tr>
+      <tr><td>Cancer 2</td><td>11</td><td>10°–20°</td><td>Frau mit Kind — Fürsorge, Mutterschaft, Schutz</td></tr>
+      <tr><td>Cancer 3</td><td>12</td><td>20°–30°</td><td>Schlange (Sarpa-Drekkāna) — Dunkel, Verstrickung, Gefahr durch Gier</td></tr>
+      <tr><td>Leo 1</td><td>13</td><td>0°–10°</td><td>Mann mit Stock, kahlköpfig — Askese, Würde im Alter, Autorität</td></tr>
+      <tr><td>Leo 2</td><td>14</td><td>10°–20°</td><td>Frau mit Blumen — Grosszügigkeit, Anmut, Schaffenskraft</td></tr>
+      <tr><td>Leo 3</td><td>15</td><td>20°–30°</td><td>Krieger mit Schwert und Schild — Tapferkeit, Schutz, direkte Kraft</td></tr>
+      <tr><td>Virgo 1</td><td>16</td><td>0°–10°</td><td>Junge Frau mit Getreide und Feuer — Reinheit, Dienstbereitschaft, Präzision</td></tr>
+      <tr><td>Virgo 2</td><td>17</td><td>10°–20°</td><td>Mann auf Elefant — Herrschaft, natürliche Führung, Weitblick</td></tr>
+      <tr><td>Virgo 3</td><td>18</td><td>20°–30°</td><td>Frau am Feuer — innere Kraft, Transformation durch Dienst</td></tr>
+      <tr><td>Libra 1</td><td>19</td><td>0°–10°</td><td>Mann in Kaufmannskleidung mit Waage — Handel, Gerechtigkeit, Balance</td></tr>
+      <tr><td>Libra 2</td><td>20</td><td>10°–20°</td><td>Mann mit Geierkopf, Krug haltend — Übergang, fremde Welten, verborgenes Wissen</td></tr>
+      <tr><td>Libra 3</td><td>21</td><td>20°–30°</td><td>Bogenschütze auf Pferd — Freiheit, Bewegung, Sehnsucht nach Weite</td></tr>
+      <tr><td>Scorpio 1</td><td>22</td><td>0°–10°</td><td>Frau mit Schlangenkörper (Sarpa) — Gefahr, Verführung, tiefe Psychologie</td></tr>
+      <tr><td>Scorpio 2</td><td>23</td><td>10°–20°</td><td>Mann mit Bogen, auf Schlange stehend — Überwindung der Angst, Transformation</td></tr>
+      <tr><td>Scorpio 3</td><td>24</td><td>20°–30°</td><td>Göttin mit vielen Armen — kosmische Macht, Zerstörung und Schutz zugleich</td></tr>
+      <tr><td>Sagittarius 1</td><td>25</td><td>0°–10°</td><td>Goldener Bogenschütze — Weisheit, Ziel, philosophische Suche</td></tr>
+      <tr><td>Sagittarius 2</td><td>26</td><td>10°–20°</td><td>Mann mit Elefant und Pferd — Grosszügigkeit, Reichtum, Führungsstärke</td></tr>
+      <tr><td>Sagittarius 3</td><td>27</td><td>20°–30°</td><td>Goldener Affe — Cleverness, Dienstbereitschaft, verborgene Kraft</td></tr>
+      <tr><td>Capricorn 1</td><td>28</td><td>0°–10°</td><td>Mann mit Strick (Pasa-Drekkāna) — Bindung, Karma, Verpflichtung</td></tr>
+      <tr><td>Capricorn 2</td><td>29</td><td>10°–20°</td><td>Frau mit Schmuck — materielle Intelligenz, Struktur, Ehrgeiz</td></tr>
+      <tr><td>Capricorn 3</td><td>30</td><td>20°–30°</td><td>Mann mit goldener Rüstung — Schutz durch Ausdauer, Verdienst durch Arbeit</td></tr>
+      <tr><td>Aquarius 1</td><td>31</td><td>0°–10°</td><td>Mann mit Krug, Wasser ausgiessend — Idealismus, Gemeinschaft, Vision</td></tr>
+      <tr><td>Aquarius 2</td><td>32</td><td>10°–20°</td><td>Frau mit Blumen und Gefäss — Reinheit, Harmonie, soziale Schönheit</td></tr>
+      <tr><td>Aquarius 3</td><td>33</td><td>20°–30°</td><td>Mann mit Buch und Stab — Wissen, Lehren, spirituelle Autorität</td></tr>
+      <tr><td>Pisces 1</td><td>34</td><td>0°–10°</td><td>Mann im Wasser mit Lotusblüte — spirituelle Tiefe, Mitgefühl, Auflösung</td></tr>
+      <tr><td>Pisces 2</td><td>35</td><td>10°–20°</td><td>Frau mit Fischen — Empathie, Fluss, verborgene Kreativität</td></tr>
+      <tr><td>Pisces 3</td><td>36</td><td>20°–30°</td><td>Mann mit zwei Schlangen — Vollendung, Integrationsweisheit, Übergang</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><strong>Anwendung:</strong> Das Drekkāna-Symbol des Aszendenten zeigt die tiefere körperliche und psychologische Natur der Person. Kelleher betont: Das Symbol ist kein starres Schicksal, sondern ein lebendiges Bild — es lädt zur intuitiven Kontemplation ein und öffnet Interpretationsräume, die rein analytische Deutung nicht erreicht. Quellen: Varahamihira, Brihat Jataka Kap. 27 (Drekkanadhyaya); Jim Kelleher, Drekkana Course (jameskelleher.com).</div>
+
+  <h3>D4 Chaturthamsha — Heimat & Immobilien</h3>
+  <p>Jedes Zeichen in <strong>4 Abschnitte</strong> zu je 7°30'. Der D4 zeigt den Bezug zu Heimat, Haus, Land und festen Werten. Saturn und Moon sind hier wichtige Signifikatoren.</p>
+
+  <h3>Lagna-Planeten in Divisional Charts</h3>
+  <p>Ein Planet, der im <strong>Lagna eines Divisional Charts</strong> steht, prägt das Thema dieses Charts direkt und unmittelbar — ähnlich wie ein Planet im 1. Haus des Radix die Persönlichkeit formt. AstroVeda identifiziert diese Planeten automatisch und gewichtet sie in der Interpretation besonders hoch:</p>
+  <ul>
+    <li><strong>D9-Lagna-Planet</strong>: Prägt die Seelenqualität und das Ehe-Karma unmittelbar</li>
+    <li><strong>D10-Lagna-Planet</strong>: Definiert die berufliche Identität und den öffentlichen Auftritt</li>
+    <li><strong>D3-Lagna-Planet</strong>: Bestimmt Vitalitätsausdruck und Geschwisterthemen</li>
+    <li><strong>D4-Lagna-Planet</strong>: Formt den Bezug zu Heimat und Grundeigentum</li>
+  </ul>
+
+  <h3>Navāṃśa-Zeichen: Autoritative Berechnung</h3>
+  <p>Das Navāṃśa-Zeichen (D9-Position) eines Planeten wird <strong>mathematisch aus der Swiss Ephemeris berechnet</strong> und nicht aus der Nakshatra-Pada-Zuordnung abgeleitet. AstroVeda übergibt das exakte D9-Zeichen jedes Planeten direkt an die KI — dies verhindert Rundungsfehler bei Grenzfällen und stellt sicher, dass die Interpretation auf der berechneten Position basiert, nicht auf einer Faustregel.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 6: Shodasha Varga</div><div class="src-detail">Definition und Berechnung der 16 Divisionalhoroskope.</div></div>
+    <div class="src"><div class="src-title">Varahamihira (505–587 n.Chr.) — Brihat Jataka, Kap. 27: Drekkanadhyaya</div><div class="src-detail">Die 36 Drekkāna-Symbole: lebendige Bilder für jeden 10°-Abschnitt des Tierkreises. Übers.: Chidambaram Aiyar, N. (1885); Subrahmanya Sastri, P.S. (1929).</div></div>
+    <div class="src"><div class="src-title">Kelleher, Jim — Drekkana Course (jameskelleher.com)</div><div class="src-detail">Systematische Erschliessung der 36 Drekkāna-Symbole für die moderne Beratungspraxis. Kelleher arbeitet direkt auf der Grundlage von Varahamihiras Brihat Jataka.</div></div>
+    <div class="src"><div class="src-title">Charak, S.K. (1999)</div><div class="src-detail">Subtleties of Medical Astrology. Systems Vision, New Delhi. [D3-Deutung]</div></div>
+    <div class="src"><div class="src-title">Bhattotpala (10. Jh. n.Chr.)</div><div class="src-detail">Kommentar zum Brihat Jataka (Varga-Kapitel).</div></div>
+  </div>
+</div>
+
+<!-- 8 -->
+<div class="msec" id="aspekte">
+  <div class="sec-num">08</div>
+  <h2>Aspekte: Graha Drishti & Rāśi Drishti</h2>
+
+  <h3>Graha Drishti (Planetenaspekte)</h3>
+  <p>In Jyotiṣa blicken alle Planeten auf das <strong>7. Haus</strong> von ihrer Position. Zusätzlich haben drei Planeten <strong>Sonderaspekte</strong>:</p>
+  <ul>
+    <li><strong>Mars</strong>: aspektiert zusätzlich das <strong>4. und 8. Haus</strong> von sich</li>
+    <li><strong>Jupiter</strong>: aspektiert zusätzlich das <strong>5. und 9. Haus</strong> von sich</li>
+    <li><strong>Saturn</strong>: aspektiert zusätzlich das <strong>3. und 10. Haus</strong> von sich</li>
+    <li><strong>Rahu/Ketu</strong>: aspektieren (nach manchen Schulen) das 5. und 9. Haus</li>
+  </ul>
+  <p>Wichtig: Der Aspekt wirkt auf das <strong>gesamte Haus</strong> — nicht nur auf Planeten darin. Ein leeres Haus unter Jupiteraspekt profitiert trotzdem von Jupiters Energie.</p>
+
+  <h3>Rāśi Drishti (Zeichen-Aspekte, Jaimini)</h3>
+  <p>Im Jaimini-System aspektieren <strong>bewegliche Zeichen</strong> (Aries, Cancer, Libra, Capricorn) alle <strong>festen Zeichen</strong> ausser dem unmittelbar benachbarten. Feste Zeichen aspektieren bewegliche, doppelt-körperliche Zeichen aspektieren doppelt-körperliche.</p>
+
+  <h3>Aspekt-Nummer & Berechnung</h3>
+  <p>AstroVeda berechnet für jeden Aspekt die exakte <strong>Aspekt-Nummer</strong> (4., 7., 8. etc.) und übergibt sie direkt an die KI — die KI berechnet keine Aspekte selbst. Beispiel: Mars in H10 aspektiert H1 mit seinem <strong>4. Aspekt</strong> (nicht dem 8., wie man bei H10→H1 falsch schliessen könnte, da Haus-Zählung zirkulär erfolgt: 10→11→12→1 = 4 Schritte). Diese autoritative Übergabe verhindert Rechenfehler im Bericht.</p>
+
+  <h3>Aspekt-Qualität</h3>
+  <p>Ein Benefic (Jupiter, Venus, starker Mond, starker Merkur) der auf ein Haus aspektiert, <strong>stärkt</strong> dieses Haus. Ein Malefic (Saturn, Mars, Sonne, Rahu, Ketu) der auf ein Haus aspektiert, <strong>belastet</strong> es — kann aber auch Energie und Fokus bringen. Ein affliktiertes Haus unter Benefic-Aspekt wird gemildert.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 26: Graha Drishti</div><div class="src-detail">Planetare Aspekte und ihre Wirkung auf Häuser und Planeten.</div></div>
+    <div class="src"><div class="src-title">Jaimini, Maharishi — Jaimini Sutras, Adhyaya 1</div><div class="src-detail">Rāśi Drishti — Zeichen-Aspekte. Übers.: Rangacharya, B.S. (1997).</div></div>
+  </div>
+</div>
+
+<!-- 9 -->
+<div class="msec" id="afflictions">
+  <div class="sec-num">09</div>
+  <h2>Affliktionen: Sechs Typen</h2>
+  <p>AstroVeda erkennt und benennt sechs klassische Affliktionstypen. Bei jedem wird geprüft, ob <strong>mildernde Faktoren</strong> (Neecha Bhanga, Benefic-Aspekte) vorhanden sind.</p>
+
+  <h3>1. Combustion (Dagdha / Asta)</h3>
+  <p>Ein Planet gilt als <strong>verbrannt</strong>, wenn er im gleichen Zeichen wie die Sonne steht und innerhalb von <strong>6°</strong> von ihr entfernt ist. Der Planet verliert seine Eigenständigkeit — er wird von der Sonnenenergie dominiert.</p>
+  <p>Ausnahme: Die Sonne selbst verbrennt nicht. Saturn wird erst unter 5° als völlig verbrannt gerechnet, Mond unter 12°. Verbrannte Planeten verlieren ihre Signifikationen weitgehend, zeigen aber oft eine starke Sonnen-/Ego-Verknüpfung des Themas.</p>
+
+  <h3>2. Debilitation ohne Neecha Bhanga</h3>
+  <p>Jeder Planet hat ein Zeichen der <strong>Tiefstellung (Neecha)</strong>. Die Energie des Planeten ist dort verdreht oder geschwächt. <strong>Neecha Bhanga</strong> (Aufhebung der Schwächung) tritt ein wenn:</p>
+  <ul>
+    <li>Der Herr des Debilitationszeichens im Kendra steht</li>
+    <li>Der Herr des Exaltationszeichens im Kendra steht</li>
+    <li>Der Planet eine Exaltationsposition im Navāṃśa (D9) hat</li>
+  </ul>
+  <p>Neecha Bhanga kann einen debilitierten Planeten in einen Raja Yoga umwandeln — aber nur wenn die Bedingungen erfüllt sind.</p>
+
+  <h3>3. Retrograde (Vakri)</h3>
+  <p>Ein <strong>retrograder Planet</strong> scheint von der Erde aus rückwärts zu laufen. In Jyotiṣa ist Retrograde kein inhärenter Makel. Es kann bedeuten: die Energie des Planeten ist nach innen gerichtet, intensiver, oder sie wirkt auf ungewöhnlichem Weg. Retrograde Jupiter und Venus gelten oft als besonders stark. Retrograde Mars und Saturn können Energie hemmen oder verzögern.</p>
+
+  <h3>4. Gandanta</h3>
+  <p>Der Übergang zwischen einem <strong>Wasserzeichen</strong> (Cancer/Scorpio/Pisces) und einem <strong>Feuerzeichen</strong> (Aries/Leo/Sagittarius) gilt als besonders sensibel — die letzten 3°20' des Wasserzeichens und die ersten 3°20' des Feuerzeichens. Ein Planet in Gandanta zeigt oft Lebensthemen an, die besonderer Auflösung oder Transformation bedürfen.</p>
+
+  <h3>5. Papakartari Yoga</h3>
+  <p>Ein Planet ist von <strong>Malefics in den benachbarten Häusern</strong> eingeschlossen. Dies erschwert den freien Ausdruck des Planeten. Klassisch: Malefics in H6 und H8 klemmen H7 ein. Ein in Papakartari stehender Planet empfängt weniger Unterstützung aus seiner Umgebung.</p>
+
+  <h3>6. Graha Yuddha (Planetenkrieg)</h3>
+  <p>Zwei Planeten (nicht Sonne, Mond oder Knoten) innerhalb von <strong>1°</strong> im gleichen Zeichen befinden sich im Planetenkrieg. Der Planet mit dem <strong>niedrigeren Längengrad</strong> gilt klassisch als Verlierer (nach anderen Schulen: der mit dem niedrigeren Breitengrad). Der Verlierer verliert an Stärke, der Sieger kann sich intensivieren.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 3: Graha Guna Swarupa Adhyaya</div><div class="src-detail">Grundnatur der Planeten, Combustion und Schwächung.</div></div>
+    <div class="src"><div class="src-title">Varahamihira — Brihat Jataka, Kap. 2</div><div class="src-detail">Debilitation, Exaltation und Neecha Bhanga.</div></div>
+    <div class="src"><div class="src-title">Kalyana Varma (ca. 580 n.Chr.) — Saravali, Kap. 4</div><div class="src-detail">Graha Yuddha — Planetenkrieg. Übers.: Santhanam, R. (1983).</div></div>
+  </div>
+</div>
+
+<!-- 10 -->
+<div class="msec" id="yogas">
+  <div class="sec-num">10</div>
+  <h2>Yogas: Planetarische Konfigurationen</h2>
+  <p>Yogas sind spezifische Planetenkonfigurationen mit definierten Auswirkungen. AstroVeda erkennt die wichtigsten Yoga-Gruppen:</p>
+
+  <h3>Raja Yogas — Macht & Anerkennung</h3>
+  <p>Entstehen wenn <strong>Kendra-Herren</strong> (1,4,7,10) und <strong>Trikona-Herren</strong> (1,5,9) durch Konjunktion, gegenseitigen Aspekt oder Stellung in gegenseitigen Häusern verbunden sind. Je stärker die beteiligten Planeten (Shad Bala), desto ausgeprägter das Yoga.</p>
+
+  <h3>Dhana Yogas — Wohlstand</h3>
+  <p>Herren der Häuser 2, 5, 9, 11 in Verbindung. Besonders: Herr des 2. und 11. Hauses zusammen, oder Jupiter als Herr von Wohlstandshäusern im Kendra.</p>
+
+  <h3>Lakshmi Yoga</h3>
+  <p>Der Herr des 9. Hauses ist stark und in einem Kendra oder Trikona positioniert — oder Venus in ihrem eigenen Zeichen/Exaltation in einem Kendra.</p>
+
+  <h3>Gajakesari Yoga</h3>
+  <p>Jupiter im Kendra vom Mond. Gibt intellektuelle Ausstrahlung, sozialen Einfluss und Schutz.</p>
+
+  <h3>Vipareeta Raja Yoga</h3>
+  <p>Herren der Dusthana-Häuser (6,8,12) stehen in anderen Dusthana-Häusern — ohne andere Häuser zu stören. Kann trotz äusserer Herausforderungen zu unerwarteten Wendungen des Glücks führen. AstroVeda erkennt VRY automatisch in jedem Divisional Chart und benennt es explizit in der Deutung.</p>
+
+  <div class="note"><strong>Wichtig:</strong> Yogas werden immer durch die Shad Bala der beteiligten Planeten qualifiziert. Ein Raja Yoga zwischen einem exaltierten und einem verbrannten Planeten hat deutlich geringere Wirkung als zwischen zwei starken Planeten.</div>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 35–75: Yoga-Adhyaya</div><div class="src-detail">Über 300 klassische Yogas mit Definitionen und Ergebnissen.</div></div>
+    <div class="src"><div class="src-title">Mantreswara — Phaladeepika, Kap. 6</div><div class="src-detail">Raja Yogas und ihre Abstufungen.</div></div>
+    <div class="src"><div class="src-title">Raman, B.V. (1991)</div><div class="src-detail">Three Hundred Important Combinations. Motilal Banarsidass, Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 11 -->
+<div class="msec" id="shadbala">
+  <div class="sec-num">11</div>
+  <h2>Shad Bala: Sechsfache Planetenstärke</h2>
+  <p>Shad Bala (»sechs Stärken«) ist das klassische vedisch-astrologische Stärkemesssystem. Es berechnet die Gesamtstärke jedes Planeten in <strong>Rupas</strong> (1 Rupa = 60 Virupa).</p>
+
+  <h3>Die sechs Stärken</h3>
+  <ol>
+    <li><strong>Sthana Bala</strong> (Positionsstärke): Exaltation, eigenes Zeichen, Freundes-/Feind-Zeichen etc.</li>
+    <li><strong>Dig Bala</strong> (Richtungsstärke): Jupiter/Merkur stark im Osten (1. Haus), Mond/Venus im Norden (4. Haus), Saturn im Westen (7. Haus), Sonne/Mars im Süden (10. Haus)</li>
+    <li><strong>Kala Bala</strong> (Zeitstärke): Tag/Nacht-Stärke, Paksha Bala (Mondphase), Vara Bala (Wochentag) u.a.</li>
+    <li><strong>Cheshta Bala</strong> (Bewegungsstärke): Retrograd, langsame Bewegung = stark; schnelle Bewegung = schwächer</li>
+    <li><strong>Naisargika Bala</strong> (Naturstärke): Fixe Rangfolge Sonne &gt; Mond &gt; Venus &gt; Jupiter &gt; Merkur &gt; Mars &gt; Saturn</li>
+    <li><strong>Drik Bala</strong> (Aspektstärke): Benefic-Aspekte addieren, Malefic-Aspekte subtrahieren</li>
+  </ol>
+
+  <h3>Mindeststärken (Ishta-Bala Anspruch)</h3>
+  <table class="wtable">
+    <thead><tr><th>Planet</th><th>Minimum Rupas</th></tr></thead>
+    <tbody>
+      <tr><td>Sonne</td><td>5.0</td></tr>
+      <tr><td>Mond</td><td>6.0</td></tr>
+      <tr><td>Mars</td><td>5.0</td></tr>
+      <tr><td>Merkur</td><td>7.0</td></tr>
+      <tr><td>Jupiter</td><td>6.5</td></tr>
+      <tr><td>Venus</td><td>5.5</td></tr>
+      <tr><td>Saturn</td><td>5.0</td></tr>
+    </tbody>
+  </table>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 27–28: Shad Bala Adhyaya</div><div class="src-detail">Vollständige Definition und Berechnung aller sechs Stärken.</div></div>
+    <div class="src"><div class="src-title">Raman, B.V. (1992)</div><div class="src-detail">Graha and Bhava Balas. IBH Prakashana, Bangalore.</div></div>
+  </div>
+</div>
+
+<!-- 12 -->
+<div class="msec" id="dasha">
+  <div class="sec-num">12</div>
+  <h2>Viṃśottarī Daśā: Planetarische Zeitperioden</h2>
+  <p>Das <strong>Viṃśottarī Daśā-System</strong> teilt das Leben in planetarische Hauptperioden (Mahādaśā) ein, die zusammen <strong>120 Jahre</strong> umfassen. Es ist das im klassischen Jyotiṣa meistverwendete Timing-System.</p>
+
+  <h3>Perioden-Längen</h3>
+  <table class="wtable">
+    <thead><tr><th>Planet</th><th>Dauer (Jahre)</th><th>Nakshatra-Start</th></tr></thead>
+    <tbody>
+      <tr><td>Ketu</td><td>7</td><td>Ashvini, Magha, Mula</td></tr>
+      <tr><td>Venus</td><td>20</td><td>Bharani, Purva Phalguni, Purva Ashadha</td></tr>
+      <tr><td>Sonne</td><td>6</td><td>Krittika, Uttara Phalguni, Uttara Ashadha</td></tr>
+      <tr><td>Mond</td><td>10</td><td>Rohini, Hasta, Shravana</td></tr>
+      <tr><td>Mars</td><td>7</td><td>Mrigashira, Chitra, Dhanishtha</td></tr>
+      <tr><td>Rahu</td><td>18</td><td>Ardra, Svati, Shatabhisha</td></tr>
+      <tr><td>Jupiter</td><td>16</td><td>Punarvasu, Vishakha, Purva Bhadrapada</td></tr>
+      <tr><td>Saturn</td><td>19</td><td>Pushya, Anuradha, Uttara Bhadrapada</td></tr>
+      <tr><td>Merkur</td><td>17</td><td>Ashlesha, Jyeshtha, Revati</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Berechnung des Daśā-Startpunkts</h3>
+  <p>Das Geburts-Nakshatra des Mondes bestimmt, welche Daśā bei Geburt läuft. Die genaue Position des Mondes im Nakshatra (in Prozent durchlaufen) bestimmt, wie viel der ersten Daśā bereits verbraucht ist.</p>
+
+  <h3>Antaradaśā & Pratyantardaśā</h3>
+  <p>Jede Mahādaśā wird in <strong>9 Antaradaśās</strong> (Unterperioden) unterteilt, jede in <strong>9 Pratyantardaśās</strong>. Die Reihenfolge ist dieselbe wie bei den Mahādaśās, beginnend mit dem Planeten der aktuellen Mahādaśā.</p>
+
+  <h3>Deutungsprinzip nach Kālidāsa (Uttara Kālāmṛta)</h3>
+  <p>Das <em>Uttara Kālāmṛta</em> (»Der Nektar der späteren Zeit«), dem Dichter Kālidāsa zugeschrieben, gibt eines der klarsten Bilder für die Wirkungsweise der Daśā: <strong>Eine Daśā-Periode ist wie ein reifes Feld — die Ernte ist bereit, doch der Bauer muss sie noch einbringen.</strong> Das bedeutet: Die Daśā öffnet das karmische Zeitfenster einer Anlage, aber ob und wie sie sich manifestiert, hängt von drei Faktoren ab:</p>
+  <ul>
+    <li><strong>Die Stärke des Daśā-Herrn</strong> im Radix (Shad Bala, Würde, Haus): Ein starker, gut gestellter Planet bringt seine Themen voll zur Entfaltung; ein geschwächter deutet sie nur an.</li>
+    <li><strong>Die Transite (Gochara)</strong> müssen die Daśā-Aussage bestätigen — die Daśā zeigt <em>was</em> reif ist, der Transit den <em>Auslöser</em>.</li>
+    <li><strong>Die Divisionalcharts</strong> (v.a. D9): Ein im Radix schwacher, aber im Navāṃśa starker Daśā-Herr entfaltet seine Wirkung erst auf der Tiefenebene.</li>
+  </ul>
+  <p>Nach Kālidāsa gibt kein Planet sein Ergebnis »an sich« — er gibt es <strong>gemäss seiner Stellung, Stärke und Verbindungen</strong>. Deshalb kann selbst eine Saturn- oder Rahu-Daśā, klassisch gefürchtet, hervorragende Ergebnisse bringen, wenn der Planet gut platziert ist. AstroVeda deutet jede laufende Daśā im Licht dieser drei Faktoren — nie den Planeten isoliert.</p>
+
+  <h3>Planetare Grundthemen der Daśās</h3>
+  <table class="wtable">
+    <thead><tr><th>Daśā-Herr</th><th>Kernthemen der Periode</th></tr></thead>
+    <tbody>
+      <tr><td>Sonne</td><td>Autorität, Selbst, Vater, Anerkennung, Vitalität, Führung</td></tr>
+      <tr><td>Mond</td><td>Emotionen, Mutter, Zuhause, Wandel, Nähre, öffentliche Wahrnehmung</td></tr>
+      <tr><td>Mars</td><td>Energie, Mut, Konflikt, Immobilien, Geschwister, Durchsetzung</td></tr>
+      <tr><td>Rahu</td><td>Ehrgeiz, Fremdes, Aussergewöhnliches, Obsession, plötzlicher Auf-/Abstieg, Materialität</td></tr>
+      <tr><td>Jupiter</td><td>Weisheit, Kinder, Lehre, Wohlstand, Dharma, Expansion, Glück</td></tr>
+      <tr><td>Saturn</td><td>Disziplin, Arbeit, Verzögerung, Karma, Ausdauer, Reife, Verantwortung</td></tr>
+      <tr><td>Merkur</td><td>Intellekt, Kommunikation, Handel, Lernen, Beweglichkeit, Analyse</td></tr>
+      <tr><td>Ketu</td><td>Loslösung, Spiritualität, Verlust, Auflösung, Mystik, Vergangenes</td></tr>
+      <tr><td>Venus</td><td>Liebe, Kunst, Genuss, Partnerschaft, Schönheit, Wohlstand, Harmonie</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Diese Themen sind <strong>Rohmaterial</strong>, keine fertige Deutung: Sie werden immer durch Haus, Zeichen, Würde und Aspekte des Daśā-Herrn im konkreten Chart moduliert. Ein Venus-Daśā bei debilitierter Venus im 6. Haus liest sich völlig anders als bei exaltierter Venus im 4.</div>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 46–50: Vimshottari Dasha Adhyaya</div><div class="src-detail">Definition, Berechnung und Deutung des Viṃśottarī-Systems.</div></div>
+    <div class="src"><div class="src-title">Kālidāsa — Uttara Kālāmṛta</div><div class="src-detail">Klassischer Text zu Daśā-Wirkung, Solar-Return und planetaren Perioden. Übers.: Sastri, P.S.</div></div>
+    <div class="src"><div class="src-title">Ojha, G. (1997)</div><div class="src-detail">Phalit Jyotish. Ranjan Publications, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 13 -->
+<div class="msec" id="jaimini">
+  <div class="sec-num">13</div>
+  <h2>Jaimini: Chara Karakas & Chara Daśā</h2>
+
+  <h3>Chara Karakas (8-Karaka-System)</h3>
+  <p>Im Jaimini-System werden die 7 Planeten (+ Rahu) nach ihrem aktuellen Längengrad im Zeichen geordnet. Der mit dem <strong>höchsten Grad</strong> wird zum Ātmakāraka (Seelen-Signifikator), der nächste zum Amatyakāraka, usw.</p>
+  <p>Rahu wird in <strong>umgekehrter Richtung</strong> gerechnet: sein effektiver Grad = 30° − Ist-Grad.</p>
+
+  <h3>Wichtige Karakas</h3>
+  <ul>
+    <li><strong>Ātmakāraka (AK)</strong>: Signifikator der Seele — zeigt den spirituellen Kernauftrag</li>
+    <li><strong>Amatyakāraka (AmK)</strong>: Karriere und Berater</li>
+    <li><strong>Dārakāraka (DK)</strong>: Partner und Beziehungen</li>
+    <li><strong>Kārakāṃśa</strong>: Das Zeichen des AK im D9 — zeigt die spirituelle Ausrichtung</li>
+  </ul>
+
+  <h3>Arudhā Lagna & Upapada Lagna</h3>
+  <p>Das <strong>Arudhā Lagna</strong> (AL) zeigt, wie die Person von der Aussenwelt wahrgenommen wird (Öffentlichkeitsimage, Māyā). Das <strong>Upapada Lagna</strong> (Arudhā des 12. Hauses) zeigt das Karma um Ehe und langfristige Partnerschaft.</p>
+  <p>Das AL wird aus der Jaimini-Zählung von Lagna und dessen Herrn abgeleitet und ist eine <strong>reine Zeichen-Position</strong> — es besitzt keinen exakten Grad und daher <strong>kein Nakshatra oder Pada</strong>. AstroVeda zeigt das Arudhā Lagna im Planeten-Tab als eigene Zeile: mit Zeichen und Zeichenherr, aber (anders als das Lagna) ohne Pada-Deutung. Während das Lagna zeigt, <em>wer</em> man ist, zeigt das AL, <em>als was</em> man erscheint. Planeten im 2. und 12. vom AL (Arudha-Dhana-Häuser) beschreiben Zufluss und Abfluss von Ansehen und Wohlstand.</p>
+
+  <h3>Chara Daśā</h3>
+  <p>Zeichen-basiertes Timing-System. Perioden werden vom Lagna-Zeichen aus berechnet. Die Dauer jeder Zeichen-Daśā = Anzahl Zeichen vom Zeichen bis zu seinem Herrn (in der bevorzugten Richtung) minus 1 Jahr. Bei doppel-herrschaftlichen Zeichen (Scorpio, Aquarius) entscheidet die Chara Bala (Jaimini-Stärke).</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Jaimini, Maharishi — Jaimini Sutras (Upadesa Sutras)</div><div class="src-detail">Ca. 400 v.Chr. bis 400 n.Chr. Übers.: Rangacharya, B.S. (1997), Sagar Publications.</div></div>
+    <div class="src"><div class="src-title">Iyer, P.S. (2004)</div><div class="src-detail">Jaimini Astrology. Sagar Publications, New Delhi.</div></div>
+    <div class="src"><div class="src-title">Sanjay Rath (2007)</div><div class="src-detail">Jaimini Maharishi's Upadesa Sutras. Sagittarius Publications, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 14 -->
+<div class="msec" id="varshaphala">
+  <div class="sec-num">14</div>
+  <h2>Varshaphala: Solarreturn-Analyse</h2>
+  <p>Varshaphala (»Jahresfrucht«) ist das vedische Äquivalent zum westlichen Solar Return. Der Solarreturn-Moment ist der Augenblick, an dem die Sonne exakt dieselbe siderische Länge wie zum Geburtsmoment erreicht — <strong>nicht der Geburtstag</strong>, sondern der astronomisch präzise Rückkehrpunkt.</p>
+
+  <h3>Jahreslagna</h3>
+  <p>Der Aszendent zum Moment des Solarreturns am Geburtsort. Er ist die wichtigste Variable des Jahreshoroskops und zeigt den Grundton des Jahres.</p>
+
+  <h3>Muntha</h3>
+  <p>Die Muntha ist ein berechneter Punkt, der sich jedes Jahr um ein Zeichen bewegt, beginnend im Lagna-Zeichen bei Geburt. Im 1. Lebensjahr: Lagna-Zeichen, im 2.: nächstes Zeichen, usw. Die Muntha im Jahreschart zeigt das <strong>zentrale Thema des Jahres</strong>.</p>
+
+  <h3>Varsha Pati (Jahresherr)</h3>
+  <p>Der Herr des Jahres wird durch eine klassische Formel aus dem Wochentag des Solarreturns und der Tageszeit bestimmt. Er zeigt, welcher Planet das Jahr dominiert und welche Energie besonders aktiviert ist.</p>
+
+  <h3>Altersabhängigkeit</h3>
+  <p>AstroVeda berechnet Varshaphala für jedes Alter (1–100). Das Geburtshoroskop bleibt dasselbe — der Solarreturn-Moment und damit Jahreslagna, Muntha und Planeten-Positionen ändern sich jährlich. So kann für jedes Lebensjahr ein Jahreshoroskop erstellt werden.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Nīlakaṇṭha (1587 n.Chr.) — Tājika Nīlakaṇṭhī</div><div class="src-detail">Das Standardwerk zur Varshaphala-Methodik. Übers.: Bhat, M.R. (1986), Motilal Banarsidass.</div></div>
+    <div class="src"><div class="src-title">Rao, K.N. (2002)</div><div class="src-detail">Predicting Through Jaimini's Chara Dasha (enthält Varshaphala-Kapitel). Vani Publications, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 15 -->
+<div class="msec" id="ashtakavarga">
+  <div class="sec-num">15</div>
+  <h2>Ashtakavarga: Bindu-Stärkepunkte</h2>
+  <p>Das Ashtakavarga-System berechnet für jeden der 7 klassischen Planeten, <strong>wie viele der 8 Punkte-Spender</strong> (7 Planeten + Lagna) günstige Positionen für diesen Planeten in jedem der 12 Zeichen bilden. Das Ergebnis: jedes Zeichen erhält 0–8 Bindus (Punkte) pro Planet.</p>
+  <p>Das <strong>Sarvashtakavarga</strong> (Gesamt-Ashtakavarga) summiert alle Bindus aller Planeten pro Zeichen. Zeichen mit hohem Sarva-Score (≥30) unterstützen Transits und Häuser stärker.</p>
+  <p>Anwendung: Ein Planet, der durch ein Zeichen mit hohem Bindu-Score transitiert, bringt günstigere Ergebnisse. Bei der Daśā-Deutung zeigt das Bindu-Score des Transit-Zeichens, wie flüssig die Daśā-Energie fließen kann.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 66–76: Ashtakavarga Adhyaya</div><div class="src-detail">Vollständige Berechnung des Ashtakavarga-Systems.</div></div>
+    <div class="src"><div class="src-title">Srinivasan, C. (1994)</div><div class="src-detail">Ashtakavarga System of Prediction. Sagar Publications, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 16 -->
+<div class="msec" id="panchang">
+  <div class="sec-num">16</div>
+  <h2>Pañcāṅga: Fünf Zeitqualitäten</h2>
+  <p>Das Pañcāṅga (»fünf Glieder«) beschreibt die Qualität des Geburtszeitpunkts durch fünf astronomische Parameter:</p>
+  <ul>
+    <li><strong>Tithi</strong>: Mondtag (1–30, Abstands-Phase Sonne-Mond in 12°-Schritten)</li>
+    <li><strong>Vara</strong>: Wochentag und sein Planetenherr</li>
+    <li><strong>Nakshatra</strong>: Mondstation zum Geburtsmoment</li>
+    <li><strong>Yoga</strong>: Kombination aus Sonne und Mond (27 Yogas, definiert durch Summe der Längen)</li>
+    <li><strong>Karaṇa</strong>: Halber Mondtag (11 Karaṇas, jeweils 6°)</li>
+  </ul>
+  <p>Das Pañcāṅga gibt Aufschluss über die atmosphärische Qualität des Geburtszeitpunkts und kann bestimmte Charakterzüge betonen oder mildern.</p>
+  <div class="sources">
+    <div class="src"><div class="src-title">Varahamihira — Brihat Samhita, Kap. 2–10</div><div class="src-detail">Pañcāṅga-Berechnungen und Deutungen.</div></div>
+  </div>
+</div>
+
+<!-- 17 -->
+<div class="msec" id="ki">
+  <div class="sec-num">17</div>
+  <h2>KI-Deutung: Prinzipien & Grenzen</h2>
+
+  <h3>Prinzip: Fakten zuerst, Interpretation danach</h3>
+  <p>Die KI-Deutung bei AstroVeda folgt einem strengen Prinzip: <strong>Zuerst wird das Horoskop mathematisch exakt berechnet</strong>, dann werden die berechneten Fakten (Planetenpositionen, Würden, Häuser, Yogas, Daśās etc.) als strukturiertes JSON an das Sprachmodell übergeben.</p>
+  <p>Das Sprachmodell interpretiert <strong>ausschliesslich diese übergebenen Fakten</strong>. Es berechnet keine eigenen Positionen, verändert keine Zeichen oder Grade und erfindet keine Informationen. Jede Aussage im Bericht ist auf einen berechneten Fakt im Horoskop zurückführbar.</p>
+
+  <h3>Deutungsreihenfolge in der KI</h3>
+  <p>Der Prompt-Aufbau folgt der klassischen Jyotiṣa-Methodik: D1 vom Lagna → D1 vom Mond → Stärken → Affliktionen → Aspekte → Divisional → Timing. Jeder Abschnitt enthält explizite Anweisungen, welche Daten zu verwenden sind.</p>
+
+  <h3>Autoritativ übergebene Rechenwerte</h3>
+  <p>Um KI-Rechenfehler zu vermeiden, übergibt AstroVeda folgende Werte immer als berechnete Fakten — die KI darf diese niemals selbst berechnen oder schätzen:</p>
+  <ul>
+    <li><strong>D9-Zeichen</strong> jedes Planeten: aus Swiss Ephemeris, nicht aus Pada-Tabelle</li>
+    <li><strong>Aspekt-Nummern</strong>: z.B. "4th-aspect" von Mars H10 auf Saturn H1 — explizit, nicht erschlossen</li>
+    <li><strong>Lagna-Planeten</strong> in Divisional Charts: automatisch identifiziert, mit erhöhtem Gewicht markiert</li>
+    <li><strong>Vipareeta Raja Yoga</strong>: automatische Erkennung in D1, D9, D10, D3, D4</li>
+    <li><strong>Hausherrschaften</strong>: welche Häuser jeder Planet regiert und welche Themen er per Stellung/Aspekt in andere Häuser trägt</li>
+  </ul>
+
+  <h3>Vollständige Planeten-Deutung</h3>
+  <p>Jeder Bericht deutet <strong>jeden einzelnen Planeten</strong> in seinem Zeichen und seinem Haus — kein Planet bleibt unerwähnt. Rahu und Ketu (die Mondknoten) werden ihrer Haus- und Zeichenstellung entsprechend behandelt (z.B. »Rahu im 12. Haus«, »Ketu im 6. Haus«). Die Planeten-Deutungen werden thematisch auf die passenden Abschnitte verteilt: Karriere-Planeten in den D10-Teil, emotionale in den Mond-Teil, spirituelle in den D9-Teil.</p>
+
+  <h3>Divisional Charts & Chandra Lagna als vollwertige Horoskope</h3>
+  <p>Der Navāṃśa (D9) und die Mond-Perspektive (Chandra Lagna) werden <strong>analog zum Rāśi</strong> gedeutet — als eigenständige Horoskope mit eigenem Lagna, eigener Hausherrschaft und eigenen Planetenstellungen:</p>
+  <ul>
+    <li><strong>D9 als Chart</strong>: eigener D9-Lagna-Herr, Planeten im D9-Lagna, Hausherrschaften im D9, Vargottama-Planeten</li>
+    <li><strong>Mond als Chandra Lagna</strong>: alle Häuser werden vom Mond neu gezählt, Planetenstellungen und Yogas vom Mond aus betrachtet — gleichrangig mit der Lagna-Deutung</li>
+  </ul>
+
+  <h3>Berichtslänge</h3>
+  <p>Der Premium-Bericht umfasst rund 12 Abschnitte und wird mit erhöhtem Token-Budget generiert, damit auch die abschliessenden Abschnitte (Jaimini, Zusammenfassung) vollständig ausformuliert werden.</p>
+
+
+  <h3>Grenzen</h3>
+  <ul>
+    <li>Kein Ersatz für einen erfahrenen Jyotiṣa-Berater</li>
+    <li>Die Shad Bala-Berechnung enthält Näherungen bei Cheshta und Kala Bala</li>
+    <li>Psychologische Nuancen und Lebenskontext sind dem Modell nicht bekannt</li>
+    <li>Keine medizinischen, rechtlichen oder finanziellen Prognosen</li>
+    <li>Sprachmodelle können Jyotiṣa-Begriffe unterschiedlich gewichten</li>
+  </ul>
+
+  <div class="note"><strong>Transparenz:</strong> Die Berichte werden durch Claude (Anthropic) generiert. Das System-Prompt, die Facts-Extraktion und die Deutungslogik sind von AstroVeda entwickelt und kontrolliert.</div>
+</div>
+
+<!-- 18 -->
+<div class="msec" id="prasna">
+  <div class="sec-num">18</div>
+  <h2>Prāśna-Methodik: Horārische Jyotiṣa</h2>
+  <p><strong>Prāśna</strong> (Sanskrit: »Frage«) ist die horārische Astrologie des Jyotiṣa — die Kunst, eine Frage durch das Horoskop des Frageaugenblicks zu beantworten. Im Unterschied zum Geburtshoroskop zeigt Prāśna nicht den Lebensplan einer Person, sondern den <strong>kosmischen Resonanzzustand einer spezifischen Frage</strong> zu einem spezifischen Zeitpunkt.</p>
+
+  <h3>Grundprinzip</h3>
+  <p>Der Moment, in dem eine Frage ernsthaft gestellt wird, enthält nach klassischer Jyotiṣa-Lehre alle Information über die Antwort. Das Horoskop dieses Moments — mit Lagna, Planeten und Häusern — wird exakt wie ein Geburtshoroskop berechnet und gedeutet, jedoch mit anderen Deutungsschwerpunkten.</p>
+
+  <h3>Schlüsselsignifikatoren im Prāśna</h3>
+  <ul>
+    <li><strong>Lagna & Lagna-Herr</strong>: Repräsentiert den Fragesteller (1. Person)</li>
+    <li><strong>7. Haus & 7. Haus-Herr</strong>: Repräsentiert das Gegenüber, den Gegenstand der Frage</li>
+    <li><strong>Mond</strong>: Zeigt den aktuellen Geisteszustand und den Verlauf der Situation</li>
+    <li><strong>Significator des Themas</strong>: Das Haus, das das Fragethema regiert (z.B. H10 für Beruf, H7 für Partnerschaft, H2 für Finanzen)</li>
+  </ul>
+
+  <h3>Mondposition & Nadi Amsha</h3>
+  <p>Im Prāśna spielt der <strong>Mond</strong> eine besonders wichtige Rolle. Seine aktuelle Nakshatra-Position, sein Pada und sein Verhältnis zum Lagna-Herrn zeigen, ob die Situation im Fluss ist (Mond wächst, Benefics aspektieren) oder stagniert (Mond schwindet, Malefics hemmen). Die <strong>Nadi Amsha</strong>-Technik (150-teilige Unterteilung des Tierkreises) ermöglicht sehr feingranulare Prāśna-Deutungen.</p>
+
+  <h3>Arudha im Prāśna</h3>
+  <p>Das <strong>Prāśna Arudha</strong> zeigt, wie die Situation von aussen erscheint — unabhängig von der tatsächlichen inneren Wahrheit. Die Differenz zwischen Lagna-Aussage (Wahrheit) und Arudha-Aussage (Schein) gibt Auskunft darüber, ob die Situation klarer oder trügerischer ist als sie wirkt.</p>
+
+  <h3>Techniken der Antwortfindung</h3>
+  <ul>
+    <li><strong>Sambandha</strong>: Verbindung zwischen Lagna-Herrn und dem relevanten Haus-Herrn — gibt es eine (Aspekt, Konjunktion, gegenseitige Herrschaft), ist die Antwort tendenziell positiv</li>
+    <li><strong>Ithasala</strong> (Anwendung): Ein langsamerer Planet nähert sich einem schnelleren — zeigt bevorstehende Erfüllung</li>
+    <li><strong>Ishrafa</strong> (Trennung): Planeten entfernen sich — die Sache ist vergangen oder vorbei</li>
+    <li><strong>Nakta / Musharrif</strong>: Vermittlung durch einen dritten Planeten</li>
+    <li><strong>Timing</strong>: Grad-Distanz zwischen den Signifikatoren → Tage/Wochen/Monate je nach Haus-Qualität (beweglich/fest/doppelt-körperlich)</li>
+  </ul>
+
+  <h3>Klassische Prāśna-Themen</h3>
+  <table class="wtable">
+    <thead><tr><th>Frage-Thema</th><th>Primäres Haus</th><th>Signifikator</th></tr></thead>
+    <tbody>
+      <tr><td>Wird das Projekt erfolgreich?</td><td>H10</td><td>Saturn, Sun</td></tr>
+      <tr><td>Werde ich die Stelle bekommen?</td><td>H10, H6</td><td>Saturn, Lagna-Herr</td></tr>
+      <tr><td>Beziehung / Heirat</td><td>H7</td><td>Venus, 7. Herr</td></tr>
+      <tr><td>Gesundheit / Genesung</td><td>H1, H6</td><td>Lagna-Herr, Mond</td></tr>
+      <tr><td>Finanzen / Vermögen</td><td>H2, H11</td><td>Jupiter, Venus</td></tr>
+      <tr><td>Reise / Umzug</td><td>H3, H9, H12</td><td>Mond, 9. Herr</td></tr>
+      <tr><td>Verlorenes Objekt finden</td><td>H2, H4</td><td>Mond, 4. Herr</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Grenzen des Prāśna</h3>
+  <p>Prāśna ist kein Orakel und kein deterministisches System. Es zeigt <strong>Tendenzen und kosmische Resonanzen</strong> zum Fragemoment — der freie Wille, veränderte Umstände und das Karma aus dem Radix-Chart spielen immer eine Rolle. Klassische Autoren betonen: Prāśna funktioniert am besten, wenn die Frage aufrichtig und mit innerem Druck gestellt wird.</p>
+
+  <div class="note"><strong>AstroVeda Prāśna:</strong> Der Prāśna-Service berechnet das Horoskop des Frageaugenblicks mit Swiss Ephemeris (gleiche Genauigkeit wie Geburtshoroskop), identifiziert die relevanten Signifikatoren automatisch und generiert eine strukturierte KI-Deutung nach den klassischen Ithasala/Ishrafa-Regeln.</div>
+
+  <div class="sources">
+    <div class="src"><div class="src-title">Prashna Marga (ca. 1649 n.Chr.)</div><div class="src-detail">Das wichtigste klassische Werk zu Prāśna Jyotiṣa. Übers.: Iyer, B.V.R. (1991), Ranjan Publications, New Delhi.</div></div>
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 80–83: Prāśna Adhyaya</div><div class="src-detail">Grundlegende Prāśna-Regeln in der Parashara-Tradition.</div></div>
+    <div class="src"><div class="src-title">Nīlakaṇṭha — Prashna Tantra</div><div class="src-detail">Horārische Techniken der Tājika-Schule. Ca. 16. Jh. n.Chr.</div></div>
+    <div class="src"><div class="src-title">Rao, K.N. (2005)</div><div class="src-detail">Predicting Through Prashna. Vani Publications, New Delhi.</div></div>
+  </div>
+</div>
+
+<!-- 19 -->
+<div class="msec" id="finsternisse">
+  <div class="sec-num">19</div>
+  <h2>Finsternisse: Grahaṇa & siderische Positionen</h2>
+  <p>Sonnen- und Mondfinsternisse (<strong>Grahaṇa</strong>) gelten in der vedischen Tradition als Zeiten intensivierter karmischer Aktivierung. Der jeweils verfinsterte Lichtkörper — die <strong>Sonne</strong> bei einer Sonnenfinsternis, der <strong>Mond</strong> bei einer Mondfinsternis — steht dabei stets in enger Konjunktion mit einem der Mondknoten (<strong>Rāhu</strong> oder <strong>Ketu</strong>). Die siderische Position der Finsternis zeigt, welches Zeichen, welches Nakshatra und welcher Grad des Tierkreises aktiviert werden.</p>
+
+  <h3>Berechnung</h3>
+  <p>AstroVeda berechnet alle Sonnen- und Mondfinsternisse ab dem Jahr <strong>1940</strong> über die Finsternis-Routinen von Swiss Ephemeris. Für jede Finsternis wird der Zeitpunkt des Maximums bestimmt und daraus die <strong>siderische (Lahiri) Position</strong> des verfinsterten Lichts abgeleitet: Zeichen, Grad und Nakshatra. Zusätzlich wird die <strong>Sichtbarkeit von Wädenswil (Schweiz)</strong> geprüft — bei Sonnenfinsternissen über den lokalen Bedeckungsgrad, bei Mondfinsternissen über die Höhe des Mondes über dem Horizont zum Zeitpunkt des Maximums.</p>
+
+  <h3>Deutung</h3>
+  <p>Eine Finsternis, deren siderische Position ein natales Sensitivpunkt (Lagna, Mond, ein Kendra- oder Trikona-Herr) trifft, gilt als bedeutsamer Auslöser für das entsprechende Lebensthema. Die Nakshatra-Zuordnung der Finsternis verfeinert diese Deutung über die Devata und den Herrn des betroffenen Nakshatra.</p>
+  <div class="note"><strong>Statisches Referenz-Asset:</strong> Die Finsternis-Tabelle wird einmalig vorberechnet und als statisches Datenblatt gespeichert — bei jedem Aufruf erfolgt reine Anzeige, keine Neuberechnung. Der Finsternis-Tab erlaubt die Auswahl eines einzelnen Kalenderjahres.</div>
+  <div class="sources">
+    <div class="src"><div class="src-title">Swiss Ephemeris — Eclipse Routines</div><div class="src-detail">sol_eclipse_when_glob / lun_eclipse_when; siderische Umrechnung mit Lahiri-Ayanamsha.</div></div>
+    <div class="src"><div class="src-title">Parashara — BPHS: Grahaṇa & Transit-Wirkung</div><div class="src-detail">Klassische Grundlagen zur karmischen Bedeutung von Finsternissen.</div></div>
+  </div>
+</div>
+
+<!-- 20 -->
+<div class="msec" id="kompatibilitaet">
+  <div class="sec-num">20</div>
+  <h2>Partner-Kompatibilität: Ashtakūṭa (Guṇa Milāna)</h2>
+  <p>Die klassische vedische Partner-Analyse (<strong>Guṇa Milāna</strong>) vergleicht die <strong>Mond-Nakshatras</strong> zweier Menschen über acht Kategorien (<strong>Kūṭas</strong>), die zusammen maximal <strong>36 Guṇa</strong> ergeben. AstroVeda ergänzt dieses Kernsystem um den Mangal-Dosha-Abgleich, vier weitere klassische Faktoren und Haus-Überlagerungen.</p>
+
+  <h3>Die acht Kūṭas (36 Guṇa)</h3>
+  <table class="wtable">
+    <thead><tr><th>Kūṭa</th><th>Max</th><th>Bedeutung</th></tr></thead>
+    <tbody>
+      <tr><td>Varna</td><td>1</td><td>Spirituelle Reife & Ego-Harmonie (Mondzeichen-Varna)</td></tr>
+      <tr><td>Vashya</td><td>2</td><td>Anziehung & gegenseitige Kontrolle (5-Gruppen-System)</td></tr>
+      <tr><td>Tara / Dina</td><td>3</td><td>Gesundheit & Wohlergehen (Nakshatra-Zählung beidseitig)</td></tr>
+      <tr><td>Yoni</td><td>4</td><td>Körperliche & intime Kompatibilität (14 Tier-Yonis)</td></tr>
+      <tr><td>Graha Maitri</td><td>5</td><td>Geistige Freundschaft (Herren der Mond-Nakshatras)</td></tr>
+      <tr><td>Gana</td><td>6</td><td>Temperament (Deva / Manuṣya / Rākṣasa)</td></tr>
+      <tr><td>Bhakut</td><td>7</td><td>Emotionale Bindung & Wohlstand (Rāśi-Abstand)</td></tr>
+      <tr><td>Nadi</td><td>8</td><td>Gesundheit, Genetik & Nachkommen (Ādi/Madhya/Antya)</td></tr>
+    </tbody>
+  </table>
+  <p>AstroVeda verwendet die <strong>vollständigen klassischen Tabellen</strong>: Yoni über die komplette <strong>14×14-Matrix</strong> (Werte 0–4, inkl. der sieben klassischen Todfeind-Paare), Vashya über das <strong>5-Gruppen-System</strong> (Chatushpada, Manava, Jalachara, Vanachara, Keeta) mit den korrekten Halbteilungen bei Sagittarius und Capricorn.</p>
+
+  <h3>Bewertung</h3>
+  <p>Ab <strong>28 Guṇa</strong> gilt die Verbindung als ausgezeichnet, ab <strong>21</strong> als gut, ab <strong>18</strong> als akzeptabel, darunter als herausfordernd. Besondere Beachtung finden <strong>Nadi Dosha</strong> (gleiche Nadi — klassisch der schwerste Punkt) und <strong>Bhakut Dosha</strong> (Rāśi-Abstände 6/8, 5/9, 2/12).</p>
+
+  <h3>Mangal Dosha (Kuja / Manglik)</h3>
+  <p>Mars in den Häusern <strong>1, 2, 4, 7, 8, 12</strong> vom Lagna gilt als <strong>Mangal Dosha</strong>. AstroVeda verwendet die strenge <strong>Lagna-Regel</strong> — nur der Aszendent-Bezug entscheidet; der Mond-Bezug wird informativ mit angezeigt. Haben beide Partner den Dosha (oder keiner), gilt er als gegenseitig aufgehoben.</p>
+
+  <h3>Ergänzende Faktoren</h3>
+  <p>Über die 36 Guṇa hinaus prüft AstroVeda vier weitere klassische Faktoren (Konvention: Person A = Mann, Person B = Frau):</p>
+  <ul>
+    <li><strong>Vedha</strong> — gegenseitige Nakshatra-Obstruktion (»Durchbohrung«) bestimmter Nakshatra-Paare</li>
+    <li><strong>Rajju</strong> — Zuordnung der Mond-Nakshatras zu fünf Körperteilen (Fuß, Hüfte, Nabel, Hals, Kopf); gleiche Rajju gilt als zu beachtender Punkt</li>
+    <li><strong>Strī-Dīrgha</strong> — die Zählung vom Nakshatra der Frau zu dem des Mannes sollte grösser als 9 sein (günstig für Langlebigkeit & Wohlstand)</li>
+    <li><strong>Rāśi Kūṭa</strong> — die gegenseitige Mondzeichen-Stellung (Nava-Pancham 5/9 günstig, Shashtashtaka 6/8 sensibel, Dwir-Dwadasha 2/12 gemischt)</li>
+  </ul>
+  <p>Zusätzlich zeigt eine <strong>Haus-Überlagerung</strong>, in welche Häuser des einen Partners die Planeten des anderen fallen — dies zeigt, welche Lebensbereiche gegenseitig aktiviert werden.</p>
+
+  <div class="note"><strong>Hinweise, keine Urteile:</strong> Die ergänzenden Faktoren sind traditionelle Warnhinweise, keine endgültigen Urteile. Einzelne Belastungen können durch stärkende Faktoren (<strong>Parihara</strong>) ausgeglichen werden. Die Zwischenwerte der Yoni- und Vashya-Tabellen variieren je nach klassischer Quelle leicht; die Extremwerte (Todfeinde = 0, gleiche Gruppe = Maximum) sind universell. Ashtakūṭa ersetzt keine ganzheitliche Chart-Analyse beider Partner.</div>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara — BPHS, Kap. 5–7: Vivaha & Guṇa Milāna</div><div class="src-detail">Grundlagen des Ashtakūṭa-Systems und der Nadi/Bhakut-Doshas.</div></div>
+    <div class="src"><div class="src-title">Muhurta-Chintamani (Rāma Daivajña, 1600 n.Chr.)</div><div class="src-detail">Klassische Yoni-, Rajju- und Vedha-Tabellen der Vivaha-Muhurta-Tradition.</div></div>
+    <div class="src"><div class="src-title">Raman, B.V. (1992)</div><div class="src-detail">Muhurtha (Electional Astrology). UBS Publishers, inkl. Guṇa-Milāna-Tabellen.</div></div>
+  </div>
+</div>
+
+<!-- 21 -->
+<div class="msec" id="quellen">
+  <div class="sec-num">21</div>
+  <h2>Klassische Quellen & Bibliographie</h2>
+
+  <h3>Primärquellen (klassische Texte)</h3>
+  <div class="sources">
+    <div class="src"><div class="src-title">Parashara, Maharishi — Brihat Parashara Hora Shastra (BPHS)</div><div class="src-detail">Ca. 600–1000 n.Chr. Das fundamentalste Werk des klassischen Jyotiṣa. Übers.: Santhanam, R. (1984), Ranjan Publications / Charak, S.K. (2006), Systems Vision.</div></div>
+    <div class="src"><div class="src-title">Varahamihira (505–587 n.Chr.) — Brihat Jataka</div><div class="src-detail">Übers.: Subrahmanya Sastri, P.S. (1929). Nächst BPHS das wichtigste klassische Werk.</div></div>
+    <div class="src"><div class="src-title">Varahamihira — Brihat Samhita</div><div class="src-detail">Enzyklopädisches Werk, Nakshatra- und Pañcāṅga-Kapitel.</div></div>
+    <div class="src"><div class="src-title">Mantreswara (ca. 1400 n.Chr.) — Phaladeepika</div><div class="src-detail">Übers.: Santhanam, R. (1993), Ranjan Publications. Standardwerk für Yoga- und Ergebnisdeutung.</div></div>
+    <div class="src"><div class="src-title">Kalyana Varma (ca. 580 n.Chr.) — Saravali</div><div class="src-detail">Übers.: Santhanam, R. (1983), Ranjan Publications. Planeten-Resultate und Sonderkonstellationen.</div></div>
+    <div class="src"><div class="src-title">Jaimini, Maharishi — Jaimini Sutras (Upadesa Sutras)</div><div class="src-detail">Ca. 400 v.Chr.–400 n.Chr. Übers.: Rangacharya, B.S. (1997), Sagar Publications.</div></div>
+    <div class="src"><div class="src-title">Nīlakaṇṭha (1587 n.Chr.) — Tājika Nīlakaṇṭhī</div><div class="src-detail">Übers.: Bhat, M.R. (1986), Motilal Banarsidass. Standardwerk Varshaphala / Tājika-System.</div></div>
+  </div>
+
+  <h3>Moderne Sekundärliteratur</h3>
+  <div class="sources">
+    <div class="src"><div class="src-title">Raman, B.V. (1992)</div><div class="src-detail">Graha and Bhava Balas. IBH Prakashana, Bangalore.</div></div>
+    <div class="src"><div class="src-title">Raman, B.V. (1991)</div><div class="src-detail">Three Hundred Important Combinations. Motilal Banarsidass, Delhi.</div></div>
+    <div class="src"><div class="src-title">Frawley, D. (2005)</div><div class="src-detail">Astrology of the Seers. Lotus Press, Twin Lakes.</div></div>
+    <div class="src"><div class="src-title">Harness, D. (1999)</div><div class="src-detail">The Nakshatras. Lotus Press, Twin Lakes.</div></div>
+    <div class="src"><div class="src-title">Charak, S.K. (1999)</div><div class="src-detail">Subtleties of Medical Astrology. Systems Vision, New Delhi.</div></div>
+    <div class="src"><div class="src-title">Srinivasan, C. (1994)</div><div class="src-detail">Ashtakavarga System of Prediction. Sagar Publications, New Delhi.</div></div>
+    <div class="src"><div class="src-title">Sanjay Rath (2007)</div><div class="src-detail">Jaimini Maharishi's Upadesa Sutras. Sagittarius Publications, New Delhi.</div></div>
+    <div class="src"><div class="src-title">Iyer, P.S. (2004)</div><div class="src-detail">Jaimini Astrology. Sagar Publications, New Delhi.</div></div>
+  </div>
+
+  <h3>Technische Quellen</h3>
+  <div class="sources">
+    <div class="src"><div class="src-title">Moshier, S.L. / Astrodienst AG (1997–2024)</div><div class="src-detail">Swiss Ephemeris 2.10. astro.com. Basiert auf JPL DE431.</div></div>
+    <div class="src"><div class="src-title">Folkner, W.M. et al. (2014)</div><div class="src-detail">The Planetary and Lunar Ephemerides DE430 and DE431. IPN Progress Report 42-196, JPL/NASA.</div></div>
+    <div class="src"><div class="src-title">Lahiri, N.C. (1984)</div><div class="src-detail">Indian Ephemeris and Nautical Almanac. Government of India.</div></div>
+    <div class="src"><div class="src-title">Government of India, Calendar Reform Committee (1956)</div><div class="src-detail">Report of the Calendar Reform Committee. CSIR, New Delhi.</div></div>
+  </div>
+</div>
+
+</div><!-- /pw -->
+</body></html>
