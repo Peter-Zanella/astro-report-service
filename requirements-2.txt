@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-stripe
-anthropic
-reportlab
-python-multipart
-pyswisseph==2.10.3.2
