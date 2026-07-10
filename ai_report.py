@@ -278,6 +278,49 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
                         break
                 break
 
+    # ── Bhāveśa — Hausherren-Analyse (Verpackung: Herr von Haus X in Haus Y) ─
+    houses_map = chart.get("houses") or {}
+    if houses_map:
+        from astro_engine import SIGN_LORDS as _SL, SIGNS as _SGN
+        sb_pl = (chart.get("shadbala") or {}).get("planets", {})
+        affl = chart.get("afflictions") or {}
+        d9 = chart.get("d9") or {}
+        d9_lag = chart.get("d9_lagna")
+        hl = {}
+        for h in range(1, 13):
+            sign = houses_map.get(h)
+            lord = _SL.get(sign)
+            rec = chart.get("planets", {}).get(lord, {})
+            entry = {
+                "lord": lord,
+                "goes_to_house": rec.get("house"),
+                "in_sign": rec.get("sign"),
+                "dignity": rec.get("dignity"),
+                "nakshatra": f"{rec.get('nakshatra','')} Pada {rec.get('pada','')}",
+            }
+            sb = sb_pl.get(lord, {})
+            if sb:
+                entry["shadbala_rupa"] = sb.get("rupa")
+                entry["shadbala_strong"] = sb.get("strong")
+            if affl.get(lord):
+                entry["afflictions"] = affl[lord]
+            mal_asp = [a for a in (chart.get("aspects") or {}).get(lord, [])
+                       if a.startswith("receives") and "[MALEFIC" in a]
+            if mal_asp:
+                entry["malefic_aspects_received"] = mal_asp
+            if lord in d9 and d9_lag is not None:
+                d9_si = d9[lord]
+                entry["d9_sign"] = _SGN[d9_si]
+                entry["d9_house"] = (d9_si - d9_lag) % 12 + 1
+            hl[f"house_{h}"] = entry
+        f["house_lords"] = {
+            "note": ("Bhāveśa-Analyse: 'Herr von Haus X geht in Haus Y' ist eine "
+                     "zentrale Deutungsachse. Der Herr trägt die Themen seines "
+                     "Hauses dorthin, wo er steht — qualifiziert durch Würde, "
+                     "Shad-Bala-Stärke, Affliktionen und seinen D9-Stand."),
+            "lords": hl,
+        }
+
     # ── Gochara — aktuelle Transite (Verpackung von astro_engine-Daten) ──
     tr = chart.get("transits") or {}
     if tr:
@@ -458,6 +501,7 @@ _SECTIONS = {
             "Aszendent & Grundwesen (D1 vom Lagna)",
             "Mond, Nakshatra & Gefühlswelt (D1 vom Mond)",
             "Pañcāṅga der Geburt — Die fünf Zeitqualitäten",
+            "Die Hausherren (Bhāveśa) — Wohin die Herren der Häuser gehen",
             "Stärken, Yogas & Shad Bala",
             "Affliktionen & Herausforderungen",
             "Aspekte & Planetarische Beziehungen",
@@ -500,6 +544,7 @@ _SECTIONS = {
             "Ascendant & core nature (D1 from Lagna)",
             "Moon, nakshatra & emotional world (D1 from Moon)",
             "Pañcāṅga of Birth — The five time qualities",
+            "The House Lords (Bhāveśa) — Where the lords of the houses go",
             "Strengths, yogas & Shad Bala",
             "Afflictions & challenges",
             "Aspects & planetary relationships",
@@ -570,6 +615,31 @@ _SECTION_GUIDES = {
             "herausfordernden Nitya-Yoga oder eine Rikta-Tithi besonnen als "
             "Prägung und Lernqualität deuten, nicht als Makel. Kompakt: "
             "2–4 Absätze.",
+        "Die Hausherren (Bhāveśa) — Wohin die Herren der Häuser gehen":
+            "Dies ist ein KERNKAPITEL — arbeite es gründlich durch, "
+            "ausschliesslich mit den Daten aus 'house_lords'. Prinzip: Der "
+            "Herr eines Hauses trägt dessen Themen dorthin, wo er steht "
+            "('Herr des X. im Y. Haus'). Beginne ausführlich mit dem "
+            "LAGNA-HERRN (Haus 1): Wohin geht er, was bedeutet das für die "
+            "Lebensausrichtung (z.B. Lagna-Herr im 10. = Karriere und "
+            "öffentliches Wirken zentral für die Identität)? Dann JEDEN "
+            "weiteren Herrn (2.–12.) in je 2–4 Sätzen: Haus-Thema → Zielhaus "
+            "→ konkrete Lebensbedeutung. Beispiele der Logik: Herr des 3. "
+            "zeigt, wie Geschwister, Mut und Initiative ins Leben wirken; "
+            "Herr des 7. beschreibt, WO und WIE der Partner gefunden wird "
+            "und welche Qualität die Partnerschaft prägt; Herr des 10. zeigt "
+            "das Feld des beruflichen Wirkens. QUALIFIZIERE jeden Herrn "
+            "zwingend: Würde ('dignity'), Shad-Bala-Stärke "
+            "('shadbala_rupa'/'shadbala_strong'), Affliktionen "
+            "('afflictions', z.B. Papakartari, Debilitation, Verbrennung/Asta, "
+            "Graha Yuddha, Gandanta oder Rāśi-Sandhi, sowie "
+            "'malefic_aspects_received', die empfangenen malefischen Aspekte "
+            "— dann das Versprechen des Hauses gedämpft oder verzögert "
+            "deuten) und den "
+            "D9-Stand ('d9_sign'/'d9_house': bestätigt oder relativiert der "
+            "Navāṃśa das D1-Versprechen?). Dusthana-Ziele (6/8/12) besonnen "
+            "als Lernfelder deuten, nicht als Verhängnis. Keine Herren oder "
+            "Stände erfinden, die nicht im JSON stehen.",
         "Stärken, Yogas & Shad Bala":
             "Nenne die wichtigsten Yogas (Raja, Dhana, Lakshmi etc.) und "
             "qualifiziere sie durch Shad Bala. Wenn ein Yoga-Planet schwach ist "
@@ -752,6 +822,30 @@ _SECTION_GUIDES = {
             "nakshatra). Interpret a challenging Nitya yoga or a Rikta tithi "
             "calmly as an imprint and learning quality, not a flaw. Compact: "
             "2–4 paragraphs.",
+        "The House Lords (Bhāveśa) — Where the lords of the houses go":
+            "This is a CORE CHAPTER — work through it thoroughly, using only "
+            "the data in 'house_lords'. Principle: the lord of a house "
+            "carries its themes to wherever he stands ('lord of X in house "
+            "Y'). Begin at length with the LAGNA LORD (house 1): where does "
+            "he go, what does this mean for the life direction (e.g. Lagna "
+            "lord in the 10th = career and public action central to "
+            "identity)? Then EVERY further lord (2nd–12th) in 2–4 sentences "
+            "each: house theme → target house → concrete life meaning. "
+            "Examples of the logic: the 3rd lord shows how siblings, courage "
+            "and initiative act in the life; the 7th lord describes WHERE "
+            "and HOW the partner is found and what quality shapes the "
+            "partnership; the 10th lord shows the field of professional "
+            "action. QUALIFY every lord without exception: dignity "
+            "('dignity'), Shad Bala strength ('shadbala_rupa'/"
+            "'shadbala_strong'), afflictions ('afflictions', e.g. "
+            "Papakartari, debilitation, combustion/Asta, Graha Yuddha, "
+            "Gandanta or Rashi Sandhi, plus 'malefic_aspects_received', "
+            "the malefic aspects the lord receives — then read the house's "
+            "promise as dampened or delayed) and the D9 placement ('d9_sign'/"
+            "'d9_house': does the Navāṃśa confirm or qualify the D1 "
+            "promise?). Read dusthana targets (6/8/12) calmly as learning "
+            "fields, not doom. Do not invent lords or placements not in the "
+            "JSON.",
         "Strengths, yogas & Shad Bala":
             "Name the key yogas (Raja, Dhana, Lakshmi etc.) and qualify them "
             "by Shad Bala. If a yoga planet is weak (low rupas, affliction), say so. "

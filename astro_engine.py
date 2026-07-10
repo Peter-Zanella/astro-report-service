@@ -588,6 +588,12 @@ def compute_aspects(planets:Dict, lagna_idx:int) -> Dict:
     return aspects
 
 
+# Classical combustion (Asta) orbs in degrees of ecliptic separation from Sun
+# (Suryasiddhanta/Phaladeepika). Mercury 12° / Venus 8° when retrograde — the
+# engine does not carry retrograde flags, so the direct-motion orbs are used.
+_COMBUST_ORB = {"Moon": 12.0, "Mars": 17.0, "Mercury": 14.0,
+                "Jupiter": 11.0, "Venus": 10.0, "Saturn": 15.0}
+
 _GANDANTA_ZONE = {
     "Cancer": (26.67, 30), "Scorpio": (26.67, 30), "Pisces": (26.67, 30),
     "Aries":  (0, 3.33),   "Leo":     (0, 3.33),   "Sagittarius": (0, 3.33),
@@ -615,19 +621,30 @@ def compute_afflictions(planets:Dict) -> Dict:
     for pname, pdata in planets.items():
         if pname in ("Ascendant","Sun"): continue
         issues = []
-        if pdata.get("sign") == sun_sign:
+        orb = _COMBUST_ORB.get(pname)
+        sun_lon = planets.get("Sun", {}).get("lon")
+        if orb and sun_lon is not None and pdata.get("lon") is not None:
+            d_sun = abs((pdata["lon"] - sun_lon + 180) % 360 - 180)
+            if d_sun < orb:
+                issues.append(f"combust/Asta ({d_sun:.1f}° from Sun, orb {orb:g}°)")
+        elif orb and pdata.get("sign") == sun_sign:   # fallback without lon
             diff = abs(p_deg.get(pname, 0) - sun_deg)
-            if diff < 6:
-                issues.append(f"combust ({diff:.1f}° from Sun)")
+            if diff < orb:
+                issues.append(f"combust/Asta ({diff:.1f}° from Sun, orb {orb:g}°)")
         if "Debil" in pdata.get("dignity",""):
             issues.append("debilitated — check for Neecha Bhanga")
         if pdata.get("retrograde") or "R" in str(pdata.get("pos","")):
             issues.append("retrograde")
         sign = pdata.get("sign",""); deg = p_deg.get(pname, 0)
+        gand = False
         if sign in _GANDANTA_ZONE:
             lo, hi = _GANDANTA_ZONE[sign]
             if lo <= deg <= hi:
+                gand = True
                 issues.append(f"Gandanta ({deg:.1f}° in {sign})")
+        if not gand and (deg < 1.0 or deg > 29.0):
+            edge = deg if deg < 1.0 else 30.0 - deg
+            issues.append(f"Rashi Sandhi ({deg:.1f}° in {sign}, {edge:.1f}° from sign edge)")
         if issues:
             aff[pname] = issues
 
@@ -647,11 +664,29 @@ def compute_afflictions(planets:Dict) -> Dict:
     war = [p for p in planets if p not in ("Sun","Moon","Rahu","Ketu","Ascendant")]
     for i, p1 in enumerate(war):
         for p2 in war[i+1:]:
-            if planets[p1].get("sign") == planets[p2].get("sign"):
-                diff = abs(p_deg.get(p1,0) - p_deg.get(p2,0))
+            l1, l2 = planets[p1].get("lon"), planets[p2].get("lon")
+            if l1 is not None and l2 is not None:
+                diff = abs((l1 - l2 + 180) % 360 - 180)
                 if diff < 1.0:
                     aff.setdefault(p1, []).append(f"Graha Yuddha with {p2} ({diff:.2f}°)")
                     aff.setdefault(p2, []).append(f"Graha Yuddha with {p1} ({diff:.2f}°)")
+
+    # Lagna in Gandanta / Rashi Sandhi (classically significant for the chart)
+    asc = planets.get("Ascendant")
+    if asc:
+        a_sign = asc.get("sign",""); a_deg = _deg_in_sign_val(asc.get("pos","0"))
+        a_iss = []
+        a_gand = False
+        if a_sign in _GANDANTA_ZONE:
+            lo, hi = _GANDANTA_ZONE[a_sign]
+            if lo <= a_deg <= hi:
+                a_gand = True
+                a_iss.append(f"Gandanta ({a_deg:.1f}° in {a_sign})")
+        if not a_gand and (a_deg < 1.0 or a_deg > 29.0):
+            edge = a_deg if a_deg < 1.0 else 30.0 - a_deg
+            a_iss.append(f"Rashi Sandhi ({a_deg:.1f}° in {a_sign}, {edge:.1f}° from sign edge)")
+        if a_iss:
+            aff["Ascendant"] = a_iss
     return aff
 
 
