@@ -82,6 +82,8 @@ def _ni_svg(li, sign_planets, title="", size=380, planet_data=None):
         for i,p in enumerate(sign_planets.get(si,[])):
             abbr = PLANET_ABR.get(p,p[:2])
             pd_info = planet_data.get(p,{}) if planet_data else {}
+            if pd_info.get("retrograde"):
+                abbr += "R"                     # Kala-Stil: SaR, JuR …
             pos_str = pd_info.get("pos","")
             deg = pos_str.split("°")[0].strip() if pos_str and "°" in pos_str else ""
             nak = pd_info.get("nakshatra","")
@@ -111,6 +113,8 @@ def _si_svg(li, sign_planets, title="", size=380, planet_data=None):
         for i,p in enumerate(sign_planets.get(si,[])):
             abbr = PLANET_ABR.get(p,p[:2])
             pd_info = planet_data.get(p,{}) if planet_data else {}
+            if pd_info.get("retrograde"):
+                abbr += "R"
             pos = pd_info.get("pos","")
             deg = pos.split("°")[0].strip() if pos and "°" in pos else ""
             nak = pd_info.get("nakshatra","")
@@ -329,8 +333,10 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         row_id = f"pada-{pn}"
         caret = "<span style='color:#c9a84c;font-size:.7rem'>▸</span> " if has_pada else ""
         clickable = f"onclick=\"togglePada('{row_id}')\" style='cursor:pointer'" if has_pada else ""
+        _r_mark = (" <span style='color:#c96a5a;font-weight:700'>R</span>"
+                   if pd.get("retrograde") else "")
         planet_rows+=(f"<tr {clickable}><td><span class='pi'>{icon}</span>{caret}<strong>{pn}</strong></td>"
-                      f"<td>{sig}</td><td>{pd.get('pos','—')}</td><td>{pd.get('house','—')}{bh_note}</td>"
+                      f"<td>{sig}</td><td>{pd.get('pos','—')}{_r_mark}</td><td>{pd.get('house','—')}{bh_note}</td>"
                       f"<td>{pd.get('nakshatra','—')}</td><td>{pd.get('pada','—')}</td>"
                       f"<td><span style='color:#c9a84c'>{pd.get('syllable','—')}</span></td>"
                       f"<td>{pd.get('nak_lord','—')}</td><td><span class='dig {dcls}'>{dig}</span></td></tr>")
@@ -691,7 +697,8 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
             if _r and _r.get("sign_idx") is not None:
                 _sp_outer[_r["sign_idx"] % 12].append(_k)
         _outer_chart = _chart_svgs(li, _sp_outer,
-                                   "Rāśi + Uranus · Neptun · Pluto (Referenz)")
+                                   "Rāśi + Uranus · Neptun · Pluto (Referenz)",
+                                   planet_data={**pls, **_outer})
         outer_html = (
             "<p class='sh'>Äussere Planeten (Referenz)</p>"
             "<div class='ow'><table class='dt'><thead><tr>"
@@ -721,10 +728,15 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
     d9_note  = _varga_note(chart.get("d9_full"))
     d10_note = _varga_note(chart.get("d10_full"))
 
-    d9_svgs     = _chart_svgs(d9li,  sp_d9,  "Navāṃśa · D-9")
-    d3_svgs     = _chart_svgs(d3li,  sp_d3,  "Drekkāna · D-3")
-    d10_svgs    = _chart_svgs(d10li, sp_d10, "Daśāṃśa · D-10")
-    d4_svgs     = _chart_svgs(d4li,  sp_d4,  "Chaturthamśa · D-4")
+    # Retro-Kennzeichnung auch in den Vargas (planetenweise identisch);
+    # bewusst OHNE Grad/Nakshatra-Daten, damit keine D1-Grade in den
+    # Divisional-Charts erscheinen.
+    _retro_pd = {p: {"retrograde": True}
+                 for p, pd in pls.items() if pd.get("retrograde")}
+    d9_svgs     = _chart_svgs(d9li,  sp_d9,  "Navāṃśa · D-9",  planet_data=_retro_pd)
+    d3_svgs     = _chart_svgs(d3li,  sp_d3,  "Drekkāna · D-3", planet_data=_retro_pd)
+    d10_svgs    = _chart_svgs(d10li, sp_d10, "Daśāṃśa · D-10", planet_data=_retro_pd)
+    d4_svgs     = _chart_svgs(d4li,  sp_d4,  "Chaturthamśa · D-4", planet_data=_retro_pd)
     vp_svgs     = _chart_svgs(vp_li, sp_vp,  f"Varshaphala · Year {vp.get('year','')}", planet_data=vp.get("planets"))
     tr_svgs     = _chart_svgs(tr_li, sp_tr,  f"Gochara · {chart.get('transit_date','today')}",
                               planet_data=tr_pls)
