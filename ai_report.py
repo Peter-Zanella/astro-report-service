@@ -314,6 +314,33 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
     f["occupants"] = {str(h): v for h, v in chart.get("occupants", {}).items()}
 
     # ── Afflictions ───────────────────────────────────────────────────────
+    # Einflüsse je Haus — vorberechnet (Rechenverbot): Besetzer und
+    # aspektierende Planeten mit Übeltäter-Markierung. Grundlage für die
+    # Würdigung der LEBENDEN INHALTE der Häuser (Vater H9, Mutter H4, ...).
+    try:
+        from astro_engine import _SPECIAL_ASPECTS as _SPA, _MALEFICS as _MAL
+        _hi = {}
+        for _hh in range(1, 13):
+            _occ = (chart.get("occupants") or {}).get(_hh,
+                    (chart.get("occupants") or {}).get(str(_hh), [])) or []
+            _asp = []
+            for _pp, _pd in pls.items():
+                if _pp == "Ascendant" or _pp in _occ:
+                    continue
+                _ph = _pd.get("house")
+                if not _ph:
+                    continue
+                _offs = [7] + list(_SPA.get(_pp, []))
+                if any(((_ph + _o - 2) % 12) + 1 == _hh for _o in _offs):
+                    _asp.append(_pp + (" [ÜT]" if _pp in _MAL else ""))
+            _hi[str(_hh)] = {
+                "occupants": [_o + (" [ÜT]" if _o in _MAL else "") for _o in _occ],
+                "aspects_from": _asp,
+            }
+        f["house_influences"] = _hi
+    except Exception:
+        pass
+
     f["afflictions"] = chart.get("afflictions", {})   # from astro_engine
 
     # ── Aspects ───────────────────────────────────────────────────────────
@@ -457,6 +484,9 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
                      "Hauses dorthin, wo er steht — qualifiziert durch Würde, "
                      "Shad-Bala-Stärke, Affliktionen und seinen D9-Stand."),
             "lords": hl,
+            # Planet → regierte Häuser: Grundlage der funktionalen
+            # Übeltäter-/Wohltäter-Bewertung (Regel 14)
+            "rulerships": chart.get("lordships", {}),
         }
 
     # ── Gochara — aktuelle Transite (Verpackung von astro_engine-Daten) ──
@@ -587,7 +617,8 @@ METHODISCHE PRINZIPIEN (die du anwenden sollst):
 10. PRĀŚNA-SYNTHESE: Wenn 'janma_context' vorhanden ist, bleibt das PRĀŚNA-CHART die primäre Antwortquelle. Nutze das Janma nur zweifach: (a) Bestätigung — stützt oder bremst der zuständige natale Hausherr das Fragethema? (b) Zeitliche Einordnung — trägt die laufende Daśā ('vimshottari_current', Ende der Mahādaśā) das versprochene Ergebnis? Benenne Widersprüche zwischen Prāśna und Janma offen, aber überschreibe NIE das Prāśna-Urteil. Webe die Synthese in die Kapitel zum Urteil und Timing ein. Fehlt 'janma_context', erwähne das Geburtshoroskop mit KEINEM Wort.
 11. PRĀŚNA-UMFANG: Beantworte genau EINE klar gestellte Frage — die in 'prasna_question'. Enthält der Text mehrere getrennte Fragen, beantworte die erste vollständig und weise freundlich darauf hin, dass weitere Fragen als Vertiefungsfrage zu diesem Prāśna gestellt werden können. Eine Frage mit mehreren Facetten ist EINE Frage — sei dort grosszügig.
 12. LAIENSPRACHE (WICHTIG): Der Bericht richtet sich an Menschen OHNE astrologisches Vorwissen — der separate Technik-Anhang enthält bereits alle Rohdaten, der Bericht wiederholt sie nicht. Konkret: (a) Jeder Sanskrit- oder Fachbegriff wird beim ersten Auftreten in einem Halbsatz erklärt oder gleich durch den verständlichen Begriff ersetzt; danach sparsam verwenden. (b) Hausnummern immer in Lebenssprache übersetzen ("dein 2. Haus — Besitz, Familie und Sprache"), nie nackt aufzählen. (c) KEINE Gradzahlen, Orben, Rupas, Prozentwerte oder technischen Kürzel im Fliesstext; JSON-Feldnamen (wie house_from_moon, d9_dignity, shadbala_rupa) erscheinen NIEMALS wörtlich. (d) Keine Datenblöcke in Klammern, keine Listen roher Positionen. (e) Zahlen nur, wo sie dem Leser etwas sagen (Alter, Jahreszahlen, Daśā-Zeiträume). Der Text liest sich wie eine warme, klare Beratung — nicht wie ein Protokoll.
-13. EHRLICHE GEWICHTUNG (WICHTIG): Herausfordernde Konstellationen haben klassisches Gewicht und werden KLAR benannt — niemals wegqualifiziert oder in Allgemeinplätze aufgelöst: (a) Ein Hausherr mit "in_dushthana": true belastet die Themen seines Heimathauses — Beispiel: Der Herr des 2. Hauses im 12. zeigt eine reale Tendenz, Besitz und Ersparnisse zu verlieren oder abfliessen zu sehen; das wird so deutlich gesagt, gefolgt vom konstruktiven Umgang (Rücklagen, Vorsicht bei Bürgschaften, bewusstes Geben). (b) Übeltäter in einem Haus fordern dessen Themen konkret heraus — z.B. Übeltäter im 5. Haus: schwieriges Kindes-Karma, belastete Romantik und stockende Bildungswege; im 7. die Partnerschaft; im 4. der häusliche Friede; im 9. das Glück und die Beziehung zu Lehrern/Vater. (c) JEDE Affliktion aus 'afflictions' und JEDER Dushthana-Stand aus 'house_lords' MUSS im thematisch passenden Kapitel erscheinen und gedeutet werden. (d) Die Balance-Regel bleibt: Nach der klaren Benennung folgt der Umgang damit — aber die Benennung darf nie so weich werden, dass die klassische Aussage verloren geht. Ein Bericht, der nur Positives spiegelt, ist wertlos und unseriös.""",
+13. EHRLICHE GEWICHTUNG (WICHTIG): Herausfordernde Konstellationen haben klassisches Gewicht und werden KLAR benannt — niemals wegqualifiziert oder in Allgemeinplätze aufgelöst: (a) Ein Hausherr mit "in_dushthana": true belastet die Themen seines Heimathauses — Beispiel: Der Herr des 2. Hauses im 12. zeigt eine reale Tendenz, Besitz und Ersparnisse zu verlieren oder abfliessen zu sehen; das wird so deutlich gesagt, gefolgt vom konstruktiven Umgang (Rücklagen, Vorsicht bei Bürgschaften, bewusstes Geben). (b) Übeltäter in einem Haus fordern dessen Themen konkret heraus — z.B. Übeltäter im 5. Haus: schwieriges Kindes-Karma, belastete Romantik und stockende Bildungswege; im 7. die Partnerschaft; im 4. der häusliche Friede; im 9. das Glück und die Beziehung zu Lehrern/Vater. (c) JEDE Affliktion aus 'afflictions' und JEDER Dushthana-Stand aus 'house_lords' MUSS im thematisch passenden Kapitel erscheinen und gedeutet werden. (d) Die Balance-Regel bleibt: Nach der klaren Benennung folgt der Umgang damit — aber die Benennung darf nie so weich werden, dass die klassische Aussage verloren geht. Ein Bericht, der nur Positives spiegelt, ist wertlos und unseriös.
+14. LEBENDE INHALTE DER HÄUSER: Häuser verkörpern auch MENSCHEN — 3: jüngere Geschwister · 4: Mutter · 5: Kinder · 7: Partner/in · 9: Vater · 11: ältere Geschwister und Freunde; dazu die Kārakas Sonne (Vater), Mond (Mutter), Mars (Geschwister), Jupiter (Kinder), Venus/Jupiter (Partner). Prüfe für diese Häuser 'house_influences' (Besetzer und Aspekte, Übeltäter mit [ÜT] markiert): Steht ein natürlicher ODER funktionaler Übeltäter (Herr von 3/6/11 bzw. der Dushthanas — aus 'house_lords' ablesbar) in einem solchen Haus oder aspektiert es, wird die betroffene PERSON kurz gewürdigt — Beispiel: Bei Zwillinge-Lagna ist Mars als Herr von 6 und 11 funktionaler Übeltäter; steht er im 9., belastet das den VATER (Gesundheit, Beziehung, mögliche Distanz oder frühe Trennung) und MUSS so benannt werden, nicht nur abstrakt als »Dharma-Thema«. Bestätigt sich die Belastung doppelt — Haus UND Kāraka (z.B. maligne Aspekte auf das 4. Haus UND auf den Mond → Mutter) — wiegt sie schwerer und wird ausdrücklich als Doppelbestätigung angesprochen. Kurz und würdevoll, ein bis drei Sätze pro betroffener Person genügen.""",
 
     "prasna_de": """Du bist ein erfahrener Jyotiṣa-Astrologe und beantwortest eine Prāśna-Frage (horārische Astrologie).
 
@@ -683,7 +714,8 @@ METHODOLOGICAL PRINCIPLES (to apply):
 10. PRASNA SYNTHESIS: When 'janma_context' is present, the PRASNA CHART remains the primary source of the answer. Use the janma chart only twofold: (a) confirmation — does the relevant natal house lord support or brake the question's theme? (b) timing — does the running dasha ('vimshottari_current', mahadasha end) carry the promised outcome? Name contradictions between prasna and janma openly, but NEVER override the prasna verdict. Weave the synthesis into the verdict and timing chapters. If 'janma_context' is absent, do not mention the birth chart with a SINGLE word.
 11. PRASNA SCOPE: Answer exactly ONE clearly asked question — the one in 'prasna_question'. If the text contains several separate questions, answer the first completely and kindly note that further questions can be asked as a follow-up question (Vertiefungsfrage) to this praśna. A single question with several facets is ONE question — be generous there.
 12. LAY LANGUAGE (IMPORTANT): The report addresses readers WITHOUT astrological training — the separate technical appendix already contains all raw data, the report does not repeat it. Concretely: (a) Every Sanskrit or technical term is explained in a half-sentence on first use or replaced by the plain concept; use sparingly afterwards. (b) Always translate house numbers into life language ("your 2nd house — possessions, family and speech"), never list them bare. (c) NO degrees, orbs, rupas, percentages or technical shorthand in the prose; JSON field names (like house_from_moon, d9_dignity, shadbala_rupa) NEVER appear verbatim. (d) No data blocks in brackets, no lists of raw positions. (e) Numbers only where they mean something to the reader (age, years, dasha periods). The text reads like warm, clear counsel — not a protocol.
-13. HONEST WEIGHTING (IMPORTANT): Challenging configurations carry classical weight and are named CLEARLY — never qualified away or dissolved into platitudes: (a) A house lord with "in_dushthana": true burdens the themes of its home house — example: the lord of the 2nd in the 12th shows a real tendency to lose possessions and savings or see them drain away; say so plainly, followed by constructive handling (reserves, caution with guarantees, conscious giving). (b) Malefics in a house concretely challenge its themes — e.g. malefics in the 5th: difficult children-karma, burdened romance and halting education; in the 7th the marriage; in the 4th domestic peace; in the 9th fortune and the relation to teachers/father. (c) EVERY affliction from 'afflictions' and EVERY dusthana placement from 'house_lords' MUST appear and be interpreted in the thematically fitting chapter. (d) The balance rule stands: after the clear naming comes the way of working with it — but the naming must never become so soft that the classical statement is lost. A report that mirrors only positives is worthless and unserious.""",
+13. HONEST WEIGHTING (IMPORTANT): Challenging configurations carry classical weight and are named CLEARLY — never qualified away or dissolved into platitudes: (a) A house lord with "in_dushthana": true burdens the themes of its home house — example: the lord of the 2nd in the 12th shows a real tendency to lose possessions and savings or see them drain away; say so plainly, followed by constructive handling (reserves, caution with guarantees, conscious giving). (b) Malefics in a house concretely challenge its themes — e.g. malefics in the 5th: difficult children-karma, burdened romance and halting education; in the 7th the marriage; in the 4th domestic peace; in the 9th fortune and the relation to teachers/father. (c) EVERY affliction from 'afflictions' and EVERY dusthana placement from 'house_lords' MUST appear and be interpreted in the thematically fitting chapter. (d) The balance rule stands: after the clear naming comes the way of working with it — but the naming must never become so soft that the classical statement is lost. A report that mirrors only positives is worthless and unserious.
+14. LIVING CONTENTS OF THE HOUSES: Houses also embody PEOPLE — 3: younger siblings · 4: mother · 5: children · 7: partner · 9: father · 11: elder siblings and friends; plus the karakas Sun (father), Moon (mother), Mars (siblings), Jupiter (children), Venus/Jupiter (partner). For these houses check 'house_influences' (occupants and aspects, malefics marked [ÜT]): if a natural OR functional malefic (lord of 3/6/11 or of the dusthanas — readable from 'house_lords') occupies or aspects such a house, the affected PERSON is briefly honoured — example: for a Gemini Lagna, Mars as lord of 6 and 11 is a functional malefic; placed in the 9th, this burdens the FATHER (health, relationship, possible distance or early separation) and MUST be named as such, not merely abstractly as a "dharma theme". If the burden is confirmed twice — house AND karaka (e.g. malefic aspects on the 4th house AND on the Moon → mother) — it weighs heavier and is explicitly addressed as a double confirmation. Brief and dignified, one to three sentences per affected person suffice.""",
 }
 
 
@@ -876,7 +908,7 @@ _SECTION_GUIDES = {
             "deuten) und den "
             "D9-Stand ('d9_sign'/'d9_house': bestätigt oder relativiert der "
             "Navāṃśa das D1-Versprechen?). Dusthana-Ziele (6/8/12) besonnen "
-            "als Lernfelder deuten, nicht als Verhängnis. Keine Herren oder "
+            "als Lernfelder deuten, nicht als Verhängnis. Keine Herren oder  Würdige dabei die LEBENDEN INHALTE nach Regel 14: Übeltäter-Besetzung oder -Aspekte auf 3/4/5/7/9/11 ('house_influences') kurz auf die jeweilige Person beziehen (Geschwister, Mutter, Kinder, Partner, Vater)."
             "Stände erfinden, die nicht im JSON stehen.",
         "Stärken, Yogas & Shad Bala":
             "Nenne die wichtigsten Yogas (Raja, Dhana, Lakshmi etc.) und "
