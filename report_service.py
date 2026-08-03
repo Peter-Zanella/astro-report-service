@@ -74,6 +74,7 @@ PRICE_DEPTH = {
     "price_BASIS":   ("basis",   "Basis-Bericht"),
     "price_PREMIUM": ("premium", "Premium-Bericht"),
     "price_PRASNA_ZUSATZ": ("prasna_zusatz", "Prāśna-Zusatzfrage"),
+    "price_FRAGE":   ("frage", "Zusatzfrage zum Bericht"),
     "price_YEAR":    ("year",    "Jahresbericht"),
     "price_MATCH":   ("partner", "Partnerschafts-Bericht"),
     "price_PRASNA":  ("prasna",  "Prāśna-Bericht"),
@@ -98,11 +99,12 @@ def get_paid_session(session_id: str, want_depth: str = ""):
     if TEST_MODE and session_id.startswith((_test_prefix("TEST"), _test_prefix("PRASNA"))):
         depth = want_depth if want_depth in ("basis", "premium", "prasna",
                                              "prasna_zusatz", "year",
-                                             "partner") else "premium"
+                                             "partner", "frage") else "premium"
         label = (f"{depth.capitalize()}-Bericht (TEST)"
                  if depth not in ("prasna", "year", "partner")
                  else "Prāśna (TEST)" if depth == "prasna"
                  else "Jahresbericht (TEST)" if depth == "year"
+                 else "Zusatzfrage zum Bericht (TEST)" if depth == "frage"
                  else "Partnerschafts-Bericht (TEST)")
         return True, {"email": "", "name": "", "depth": depth,
                       "label": label, "test": True}
@@ -190,6 +192,19 @@ button:hover{{background:#3c2f20}}
 
 
 def form_html(session_id: str, info: dict) -> str:
+    # Bis zu 3 individuelle Fragen — nur im Premium-Reading; die allgemeinen
+    # Varga-/Beziehungskapitel werden dann kompakter gehalten (ai_report).
+    if info.get("depth") == "premium":
+        questions_block = f"""
+<div style="border:1px solid {PAL['line']};border-radius:6px;padding:14px 16px;margin:14px 0">
+<label style="font-weight:600">Deine Fragen an dein Horoskop <span style="color:{PAL['muted']};font-weight:400">(bis zu 3, optional — sie erhalten ein eigenes Kapitel)</span></label>
+<input name="q1" placeholder="Frage 1 — z.B. Soll ich mich beruflich verändern?" style="margin-bottom:8px">
+<input name="q2" placeholder="Frage 2 (optional)" style="margin-bottom:8px">
+<input name="q3" placeholder="Frage 3 (optional)">
+<p class="muted" style="font-size:.8rem;margin-top:8px">Damit deine Fragen Raum bekommen, fallen die allgemeinen Kapitel zu Beruf (D10), Geschwistern (D3), Heim (D4) und Beziehung (D9) etwas kompakter aus. Weitere Fragen kannst du später jederzeit als bezahlte Zusatzfrage stellen.</p>
+</div>"""
+    else:
+        questions_block = ""
     test = info.get("test")
     cur_depth = info.get("depth", "premium")
     banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed #b8902f;'
@@ -231,6 +246,7 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 <input name="occupation" placeholder="z.B. Lehrerin, Ingenieur"></div></div>
 <label>Aktuelle Lebensumstände <span style="color:{PAL['muted']};font-weight:400">(optional, für gezieltere Deutung)</span></label>
 <textarea name="context" rows="3" placeholder="z.B. berufliche Neuorientierung, Familiengründung geplant, gesundheitliche Fragen …" style="width:100%;padding:11px 12px;border:1px solid {PAL['line']};border-radius:4px;background:{PAL['paper2']};color:{PAL['ink']};font-size:1rem;font-family:inherit;resize:vertical"></textarea>
+{questions_block}
 <div><label>Sprache</label><select name="lang"><option value="de">Deutsch</option>
 <option value="en">English</option></select></div></div>
 {depth_field}
@@ -315,6 +331,9 @@ def report_form(session_id: str = "", depth: str = "", key: str = ""):
                             escape(info.get("error", "Zahlung nicht bestätigt.")), "err"), 402)
     if info.get("depth") == "partner":
         return HTMLResponse(partner_form_html(session_id, info))
+    if info.get("depth") == "frage":
+        return RedirectResponse(
+            url=f"/report-frage?session_id={session_id}", status_code=303)
     return HTMLResponse(form_html(session_id, info))
 
 
@@ -323,7 +342,8 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
              time: str = Form("12:00"), city: str = Form(...),
              lang: str = Form("de"), depth: str = Form(""),
              gender: str = Form(""), occupation: str = Form(""), context: str = Form(""),
-             b_day: str = Form(""), b_month: str = Form(""), b_year: str = Form("")):
+             b_day: str = Form(""), b_month: str = Form(""), b_year: str = Form(""),
+             q1: str = Form(""), q2: str = Form(""), q3: str = Form("")):
     ok, info = get_paid_session(session_id, want_depth=depth)
     if not ok:
         return HTMLResponse(msg_html("Zahlung prüfen",
@@ -365,6 +385,11 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
         # Optional user context — used only for interpretation, never for calculation
         chart["meta"]["occupation"] = occupation.strip()
         chart["meta"]["context"] = context.strip()
+        # Bis zu 3 individuelle Kundenfragen (Premium): eigenes Kapitel in der
+        # Deutung; Varga-/Beziehungskapitel werden dafür kompakter (ai_report).
+        _qs = [q.strip() for q in (q1, q2, q3) if q and q.strip()][:3]
+        if _qs and info.get("depth") == "premium":
+            chart["meta"]["questions"] = _qs
         # Lebensspannen-Checkliste im Medizin-Tab: NUR im Test-Modus (Betreiber),
         # niemals in bezahlten Kundenberichten.
         chart["show_lifespan"] = bool(info.get("test"))
@@ -387,8 +412,11 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
 
     fn = f"{info['label'].replace(' ', '_')}.pdf"
     ititle = "Persönliche Deutung" if lang == "de" else "Personal Reading"
+    # Upsell: bezahlte Zusatzfrage zum Bericht (nur Premium sinnvoll)
+    _ups = _frage_upsell_url(session_id) if info.get("depth") == "premium" else None
     html_view = chart_html.build_html(chart, interpretation=text,
-                                      interpretation_title=ititle)
+                                      interpretation_title=ititle,
+                                      upsell_url=_ups)
     _PDF_CACHE[session_id]  = (pdf, fn)
     _PDF_CACHE[session_id + "-technik"] = (
         pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
@@ -609,6 +637,16 @@ def _build_janma_context(birth_date: str, birth_time: str, birth_city: str,
             "Geburtsdaten unvollständig",
             "Die optionalen Geburtsangaben konnten nicht gelesen werden. "
             "Bitte prüfen — oder alle drei Felder leer lassen.", "err")
+
+
+def _frage_upsell_url(anchor_sid: str):
+    """Stripe-Payment-Link für die Zusatzfrage zum Bericht, verankert am
+    ursprünglichen Reading via client_reference_id. Env: REPORT_FRAGE_URL."""
+    base = os.environ.get("REPORT_FRAGE_URL", "").strip()
+    if not base:
+        return None
+    sep = "&" if "?" in base else "?"
+    return f"{base}{sep}client_reference_id={anchor_sid}"
 
 
 def _prasna_upsell_url(anchor_sid: str):
@@ -996,6 +1034,102 @@ def view_chart(session_id: str):
                             "Die interaktive Ansicht ist nicht mehr verfügbar. "
                             "Bitte erstelle einen neuen Bericht.", "err"), 404)
     return HTMLResponse(html)  # keep in cache (not popped)
+
+# ── Zusatzfrage zum Bericht: neue Frage an das GEBURTShoroskop ───────────────
+@app.get("/report-frage", response_class=HTMLResponse)
+def report_frage(session_id: str = "", ref: str = ""):
+    if not session_id:
+        return HTMLResponse(msg_html("Kein Zugang", "Fehlende Session-ID.",
+                                     "err"), 400)
+    if already_done(session_id):
+        return HTMLResponse(done_html(session_id))
+    ok, info = get_paid_session(session_id, want_depth="frage")
+    if not ok:
+        return HTMLResponse(msg_html("Kein Zugang",
+                            info.get("error", "Zahlung nicht bestätigt."),
+                            "err"), 403)
+    anchor = info.get("ref") or (ref if info.get("test") else "")
+    params = _CHART_CACHE.get(anchor) if anchor else None
+    if not params or params.get("prasna"):
+        return HTMLResponse(msg_html(
+            "Ursprünglicher Bericht nicht gefunden",
+            "Die Zusatzfrage bezieht sich auf einen bestehenden "
+            "AstroVeda-Bericht, der auf dem Server nicht mehr verfügbar ist. "
+            "Bitte melde dich bei uns — wir helfen sofort weiter.", "err"), 404)
+    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed '
+              '#b8902f;padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – '
+              'keine Zahlung nötig.</p>' if info.get("test") else "")
+    return HTMLResponse(_page("Zusatzfrage zu deinem Bericht", f"""
+<div class="ey"><span class="dot">◆</span> Zusatzfrage · dein Geburtshoroskop</div>
+<h1>Deine Zusatzfrage</h1>{banner}
+<p>Sie wird an <b>deinem Geburtshoroskop</b> gedeutet
+({escape(str(params.get('name','')))} · {escape(str(params.get('label','')))}) —
+mit Blick auf die passenden Häuser, Kārakas und deine aktuelle Daśā-Zeit.</p>
+<form method="post" action="/report-frage-generate"
+  onsubmit="var b=this.querySelector('button');b.textContent='⏳ Wird gedeutet…';setTimeout(function(){{b.disabled=true;}},50);">
+<input type="hidden" name="session_id" value="{escape(session_id, quote=True)}">
+<input type="hidden" name="ref" value="{escape(anchor, quote=True)}">
+<label>Deine Frage</label>
+<input name="question" placeholder="z.B. Soll ich das Stellenangebot annehmen?" required>
+<div><label>Sprache</label><select name="lang">
+  <option value="de">Deutsch</option><option value="en">English</option>
+</select></div>
+<button type="submit">Frage deuten lassen</button>
+</form>"""))
+
+
+@app.post("/report-frage-generate", response_class=HTMLResponse)
+def report_frage_generate(session_id: str = Form(...), ref: str = Form(...),
+                          question: str = Form(...), lang: str = Form("de")):
+    ok, info = get_paid_session(session_id, want_depth="frage")
+    if not ok:
+        return HTMLResponse(msg_html("Kein Zugang",
+                            info.get("error", "Zahlung nicht bestätigt."),
+                            "err"), 403)
+    anchor = info.get("ref") or (ref if info.get("test") else "")
+    params = _CHART_CACHE.get(anchor) if anchor else None
+    if not params or params.get("prasna"):
+        return HTMLResponse(msg_html(
+            "Ursprünglicher Bericht nicht gefunden",
+            "Der zugehörige Bericht ist auf dem Server nicht mehr verfügbar. "
+            "Bitte melde dich bei uns.", "err"), 404)
+    if not claim_session(session_id):
+        return HTMLResponse(done_html(session_id))
+    try:
+        chart = E.generate_chart(params["y"], params["mo"], params["d"],
+                                 params["hh"], params["mm"],
+                                 params["lat"], params["lon"], params["offset"],
+                                 params["label"], params.get("name", ""),
+                                 params.get("gender", ""))
+        if "/" in str(params.get("iana", "")):
+            chart["meta"]["tzname"] = params["iana"]
+        chart["meta"]["questions"] = [question.strip()]
+        text = ai_report.generate_interpretation(chart, lang=lang, depth="frage")
+        title = ("Zusatzfrage zu deinem Bericht" if lang == "de"
+                 else "Follow-up question to your report")
+        pdf = pdf_report.build_pdf(chart, interpretation=text,
+                                   interpretation_title=title, variant="customer")
+        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
+                                        interpretation_title=title, variant="full")
+        html_view = chart_html.build_html(chart, interpretation=text,
+                                          interpretation_title=title,
+                                          upsell_url=_frage_upsell_url(anchor))
+    except Exception as e:
+        con = _db(); con.execute("DELETE FROM deliveries WHERE session_id=?", (session_id,))
+        con.commit(); con.close()
+        import traceback, sys
+        traceback.print_exc(file=sys.stderr)
+        return HTMLResponse(msg_html("Fehler bei der Berechnung",
+                            f"{type(e).__name__}: {escape(str(e))} — bitte "
+                            "erneut versuchen.", "err"), 500)
+    fn = "Zusatzfrage_zum_Bericht.pdf"
+    _PDF_CACHE[session_id] = (pdf, fn)
+    _PDF_CACHE[session_id + "-technik"] = (
+        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
+    _HTML_CACHE[session_id] = html_view
+    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}",
+                            status_code=303)
+
 
 # ── Prāśna-Zusatzfrage (CHF 18): neue Frage an dasselbe Prāśna-Chart ─────────
 @app.get("/prasna-followup", response_class=HTMLResponse)
