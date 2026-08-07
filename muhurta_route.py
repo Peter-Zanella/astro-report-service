@@ -14,15 +14,52 @@ Aufruf vom Frontend:
   /api/muhurta?year=2026&month=7&lat=47.23&lon=8.67&tz=Europe/Zurich&sid=cs_...
   optional: &janma=8  (Index 0–26) → personalisierter Modus (Tārā-Zeile)
 """
+import threading
 from collections import OrderedDict
 
 from fastapi.responses import JSONResponse
 
+try:
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+except ImportError:                                    # pragma: no cover
+    ZoneInfo = None                                    # type: ignore
+    ZoneInfoNotFoundError = Exception                  # type: ignore
+
 from muhurta import month_muhurta, activity_windows, ACTIVITIES
 
 # Kleiner Ergebnis-Cache: Monats-Matrix ist deterministisch je Parameter-Satz.
+# Sync-Handler laufen im Starlette-Threadpool → echte Nebenläufigkeit auf dem
+# geteilten OrderedDict; ein Lock verhindert die Race zwischen Treffer-Lookup
+# und Verdrängung (sonst sporadische KeyError/RuntimeError → 500).
 _CACHE: "OrderedDict[tuple, dict]" = OrderedDict()
 _CACHE_MAX = 60
+_CACHE_LOCK = threading.Lock()
+
+
+def _valid_tz(tz: str) -> bool:
+    """True, wenn tz eine auflösbare IANA-Zone ist (verhindert 500 auf Falscheingabe)."""
+    if ZoneInfo is None:
+        return True                                    # kein zoneinfo → nicht prüfbar
+    try:
+        ZoneInfo(tz)
+        return True
+    except (ZoneInfoNotFoundError, ValueError, Exception):
+        return False
+
+
+def _cache_get(key):
+    with _CACHE_LOCK:
+        if key in _CACHE:
+            _CACHE.move_to_end(key)
+            return _CACHE[key]
+    return None
+
+
+def _cache_put(key, data):
+    with _CACHE_LOCK:
+        _CACHE[key] = data
+        while len(_CACHE) > _CACHE_MAX:
+            _CACHE.popitem(last=False)
 
 
 def register_muhurta_routes(app, authorize=None):
@@ -45,15 +82,17 @@ def register_muhurta_routes(app, authorize=None):
             janma_idx = int(janma) if janma.strip() != "" else None
             if janma_idx is not None and not (0 <= janma_idx <= 26):
                 raise ValueError("janma")
+            if not _valid_tz(tz):
+                raise ValueError("tz")
         except (TypeError, ValueError):
             return JSONResponse({"error": "Parameter: year, month, lat, lon, "
                                           "tz, optional janma (0-26)"},
                                 status_code=400)
 
         key = (year, month, round(lat, 3), round(lon, 3), tz, janma_idx)
-        if key in _CACHE:
-            _CACHE.move_to_end(key)
-            return JSONResponse(_CACHE[key])
+        cached = _cache_get(key)
+        if cached is not None:
+            return JSONResponse(cached)
         try:
             data = month_muhurta(year, month, lat, lon, tz,
                                  janma_nakshatra_index=janma_idx)
@@ -61,9 +100,7 @@ def register_muhurta_routes(app, authorize=None):
             return JSONResponse({"error": f"Berechnung fehlgeschlagen: "
                                           f"{type(e).__name__}"},
                                 status_code=500)
-        _CACHE[key] = data
-        while len(_CACHE) > _CACHE_MAX:
-            _CACHE.popitem(last=False)
+        _cache_put(key, data)
         return JSONResponse(data)
 
     @app.get("/api/muhurta/activity")
@@ -82,6 +119,8 @@ def register_muhurta_routes(app, authorize=None):
             months = max(1, min(int(months), 12))
             if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
                 raise ValueError("latlon")
+            if not _valid_tz(tz):
+                raise ValueError("tz")
         except (TypeError, ValueError):
             return JSONResponse({"error": "Parameter: year, month, months "
                                           "(1-12), lat, lon, tz, activity ("
@@ -89,16 +128,14 @@ def register_muhurta_routes(app, authorize=None):
                                 status_code=400)
         key = ("act", year, month, months, round(lat, 3), round(lon, 3),
                tz, activity)
-        if key in _CACHE:
-            _CACHE.move_to_end(key)
-            return JSONResponse(_CACHE[key])
+        cached = _cache_get(key)
+        if cached is not None:
+            return JSONResponse(cached)
         try:
             data = activity_windows(year, month, months, lat, lon, tz, activity)
         except Exception as e:
             return JSONResponse({"error": f"Berechnung fehlgeschlagen: "
                                           f"{type(e).__name__}"},
                                 status_code=500)
-        _CACHE[key] = data
-        while len(_CACHE) > _CACHE_MAX:
-            _CACHE.popitem(last=False)
+        _cache_put(key, data)
         return JSONResponse(data)

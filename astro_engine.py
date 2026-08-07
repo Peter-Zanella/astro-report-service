@@ -371,7 +371,10 @@ def compute_positions(jd:float, lat:float, lon:float) -> Tuple[Dict[str,float],f
         if ok:
             lons["Rahu"] = norm(_rahu(jd)-ayan); lons["Ketu"] = norm(lons["Rahu"]+180)
             lons["Ascendant"] = norm(_ascendant(jd,lat,lon)-ayan)
-            return lons, ayan, "JPL Horizons API  -  DE431, < 0.001°"
+            # Tropical longitudes are DE431-accurate, but the sidereal shift here
+            # uses the polynomial _ayanamsha() (not true Lahiri), so the net
+            # sidereal error is arc-minutes, not < 0.001°. Label honestly.
+            return lons, ayan, "JPL Horizons API  -  DE431 tropical, sidereal via approx. ayanāṃśa (~1–2′)"
         _hrz_checked = False
 
     ayan = _ayanamsha(jd); lons = {}
@@ -2545,7 +2548,10 @@ def compute_ashtakuta(chart_a, chart_b):
     deg_a = ma.get("lon", sa * 30) % 30   # Moon's degree within its sign
     deg_b = mb.get("lon", sb * 30) % 30
 
-    varna = 1.0 if _VARNA_BY_SIGN.get(sa,0) <= _VARNA_BY_SIGN.get(sb,0) else 0.0
+    # Classical rule: point awarded when the groom's (chart_a = male) varna is
+    # equal to or HIGHER than the bride's (chart_b = female). Rank 3=Brahmin(high)
+    # … 0=Shudra(low), so male_rank >= female_rank.
+    varna = 1.0 if _VARNA_BY_SIGN.get(sa,0) >= _VARNA_BY_SIGN.get(sb,0) else 0.0
     vashya = _vashya_points(sa, sb, deg_a, deg_b)
     tara = _tara_points(na, nb)
     yoni = _yoni_points(na, nb)

@@ -67,7 +67,12 @@ def _ni_svg(li, sign_planets, title="", size=380, planet_data=None):
     # so that the lagna sign always lands in position 0.
     cells = []
     for pos in range(12):
-        si = (li + pos) % 12          # sign that occupies NI cell 'pos'
+        # North Indian houses run ANTI-CLOCKWISE from the top-centre Lagna cell:
+        # pos increases clockwise across the fixed polygons, so the sign (and its
+        # house) must decrease. si=(li-pos) puts House 4 at left-centre (West) and
+        # House 10 at right-centre (East), per the standard kundli. (Was li+pos,
+        # which mirror-flipped the whole chart.)
+        si = (li - pos) % 12          # sign that occupies NI cell 'pos'
         pts = _NI_POLY[pos]
         lx,ly = _NI_LABEL[pos]
         is_l = (pos == 0)             # position 0 is always Lagna cell
@@ -75,7 +80,7 @@ def _ni_svg(li, sign_planets, title="", size=380, planet_data=None):
         stroke = "#c9a84c" if is_l else "#2e2e5a"
         sw = "1.5" if is_l else "0.7"
         abr = SIGN_ABR[si]
-        house_num = pos + 1
+        house_num = 1 if pos == 0 else 13 - pos   # anti-clockwise: pos1→H12 … pos11→H2
         sl = f'<text x="{lx}" y="{ly-16}" text-anchor="middle" font-size="9" fill="#6666aa" font-family="serif">{abr}</text>'
         asc = f'<text x="{lx}" y="{ly-27}" text-anchor="middle" font-size="8" fill="#c9a84c" font-family="serif">Asc</text>' if is_l else ""
         pl_items = []
@@ -492,13 +497,18 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
     # ── Prāśna-Upsell: Vertiefungsfrage am selben Chart (CHF 18) ─────────────
     upsell_html = ""
     if upsell_url and chart.get("prasna_mode"):
+        # href-Sanitisierung: nur http(s)/relative URLs zulassen (schützt vor
+        # javascript:/data:-Schemata) und danach für das Attribut escapen.
+        _u = str(upsell_url).strip()
+        _scheme_ok = _u.startswith(("https://", "http://", "/")) or _u.startswith("#")
+        _safe_url = _html_esc.escape(_u, quote=True) if _scheme_ok else "#"
         upsell_html = (
             '<div style="margin:14px 0;padding:12px 16px;background:var(--bg2);'
             'border:1px dashed var(--gd);border-radius:8px;display:flex;'
             'align-items:center;gap:14px;flex-wrap:wrap">'
             '<span style="color:var(--tx)">Noch eine Frage zu diesem Moment? '
             'Eine <b>Vertiefungsfrage</b> wird am selben Prāśna-Chart gedeutet.</span>'
-            f'<a class="btn btn-p" href="{upsell_url}" style="margin-left:auto">'
+            f'<a class="btn btn-p" href="{_safe_url}" style="margin-left:auto">'
             'Vertiefungsfrage · CHF 18</a></div>')
 
     # ── Muhūrta-Tab (Kalender via /api/muhurta; Konfiguration aus dem Chart) ──
@@ -833,7 +843,7 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
     # ── HTML ──────────────────────────────────────────────────────────────────
     return f"""<!DOCTYPE html>
 <html lang="de"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="format-detection" content="telephone=no">
+<meta charset="UTF-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="format-detection" content="telephone=no">
 <title>Vedic Chart · {m.get('name','')}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1230,7 +1240,7 @@ function _plCol(p){{return(['Sun','Moon','Jupiter','Mars'].indexOf(p)>=0)?'#f5e6
 function _niSvg(li,sp,ttl,sz){{
   sz=sz||380; var h='';
   for(var pos=0;pos<12;pos++){{
-    var si=(li+pos)%12;                 // sign occupying NI cell 'pos'
+    var si=(li-pos+12)%12;              // anti-clockwise (see _ni_svg); was li+pos (mirror-flipped)
     var pts=_NI_POLY[pos],lx=_NI_LX[pos],ly=_NI_LY[pos],isL=(pos===0);
     h+='<polygon points="'+pts+'" fill="'+(isL?'rgba(201,168,76,.12)':'rgba(255,255,255,.02)')+'" stroke="'+(isL?'#c9a84c':'#2e2e5a')+'" stroke-width="'+(isL?1.5:.7)+'"/>';
     h+='<text x="'+lx+'" y="'+(ly-16)+'" text-anchor="middle" font-size="9" fill="'+(isL?'#c9a84c':'#6666aa')+'" font-family="serif">'+_SIGNS_ABR[si]+(isL?'◆':'')+'</text>';

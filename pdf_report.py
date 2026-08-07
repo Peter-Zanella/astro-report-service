@@ -15,6 +15,7 @@ variant="customer"  reader-friendly report that follows the AstroVeda
 """
 import os
 from io import BytesIO
+from xml.sax.saxutils import escape as _xml_escape
 
 from astro_engine import (
     SIGNS, SIGN_ABR, SIGN_LORDS, PLANET_ORDER, PLANET_ABR, _AKV_PLANETS, _SIGN_CELL,
@@ -179,6 +180,12 @@ def build_pdf(chart: dict, compat: dict = None, interpretation: str = None,
         F_SER, F_SER_B, F_SER_I = "Times-Roman", "Times-Bold", "Times-Italic"
         F_SANS, F_SANS_B = "Helvetica", "Helvetica-Bold"
         T = _iast_ascii                       # no unicode font: transliterate
+
+    # TE = transliterate THEN XML-escape. reportlab parses Paragraph() text as
+    # XML markup, so any user/free-text value ('Tom & Jerry', a place with '&'
+    # or '<') would crash doc.build(). Use TE for every interpolated user value;
+    # keep intentional inline markup (<b>…</b>) OUTSIDE the TE() call.
+    TE = lambda s: _xml_escape(T(str(s if s is not None else "")))
 
     ink = colors.HexColor(_INK); accent = colors.HexColor(_ACCENT)
     line = colors.HexColor(_LINE); paper = colors.HexColor(_PAPER)
@@ -772,9 +779,9 @@ def build_pdf(chart: dict, compat: dict = None, interpretation: str = None,
         _yorder = {g: i for i, g in enumerate(_YG)}
         yd = [["Group", "Yoga", "Planets", "What it means"]]
         for y in sorted(yogas, key=lambda y: _yorder.get(y["group"], 99)):
-            yd.append([Paragraph(y["group"], small), Paragraph(y["name"], small),
-                       Paragraph(", ".join(y["planets"]), small),
-                       Paragraph(y["detail"], small)])
+            yd.append([Paragraph(TE(y["group"]), small), Paragraph(TE(y["name"]), small),
+                       Paragraph(TE(", ".join(y["planets"])), small),
+                       Paragraph(TE(y["detail"]), small)])
         yt = Table(yd, repeatRows=1, colWidths=[28 * mm, 30 * mm, 26 * mm, 92 * mm])
         yt.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), paper),
@@ -960,8 +967,8 @@ def build_pdf(chart: dict, compat: dict = None, interpretation: str = None,
         story.append(Paragraph(T("Jyotiṣa · Vedische Astrologie"), tp_line))
         story.append(Spacer(1, 14 * mm))
         if m.get("name"):
-            story.append(Paragraph(T(m["name"]), tp_name))
-        story.append(Paragraph(T(f"{m['birth']} ({m['tz']}) · {m['location'] or ''}"), tp_line))
+            story.append(Paragraph(TE(m["name"]), tp_name))
+        story.append(Paragraph(TE(f"{m['birth']} ({m['tz']}) · {m['location'] or ''}"), tp_line))
         story.append(Paragraph(T(f"Lagna: {chart['lagna']} {chart['lagna_pos']} · "
                                  f"Lahiri-Ayanamsha · Ganzzeichen-Häuser"), tp_line))
         story.append(Spacer(1, 60 * mm))
@@ -1102,19 +1109,19 @@ def build_pdf(chart: dict, compat: dict = None, interpretation: str = None,
         story.append(Paragraph("Marriage / Partnership Compatibility", h1))
         story.append(Paragraph("Ashtakoota (Guna Milan) · Moon-nakshatra matching", sub))
         story.append(Paragraph(
-            f"<b>{compat['a_name']}</b> (Moon {compat['a_moon']})  &amp;  "
-            f"<b>{compat['b_name']}</b> (Moon {compat['b_moon']}"
-            + (f", {compat['b_loc']}" if compat.get("b_loc") else "") + ")", body))
+            f"<b>{TE(compat['a_name'])}</b> (Moon {TE(compat['a_moon'])})  &amp;  "
+            f"<b>{TE(compat['b_name'])}</b> (Moon {TE(compat['b_moon'])}"
+            + (f", {TE(compat['b_loc'])}" if compat.get("b_loc") else "") + ")", body))
         tot = compat["total"]; mx = compat.get("max", 36)
         vhex = _GOOD if tot >= 25 else _WARN if tot >= 18 else _BAD
         story.append(Spacer(1, 2 * mm))
         story.append(Paragraph(
-            f"<b>Guna Milan:</b> <font color='{vhex}'>{tot:g} / {mx} — {compat['verdict']}</font>"
+            f"<b>Guna Milan:</b> <font color='{vhex}'>{tot:g} / {mx} — {TE(compat['verdict'])}</font>"
             "  <font size=7 color='#7a6a4c'>(≥18 is the usual minimum)</font>", body))
         story.append(Spacer(1, 2 * mm))
         kd = [["Kuta", "Score", "Meaning"]]
         for k in compat["kutas"]:
-            kd.append([k["name"], f"{k['got']:g} / {k['max']}", Paragraph(k["note"], small)])
+            kd.append([k["name"], f"{k['got']:g} / {k['max']}", Paragraph(TE(k["note"]), small)])
         kt = Table(kd, repeatRows=1, colWidths=[26 * mm, 20 * mm, 116 * mm])
         kt.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), paper),
@@ -1126,8 +1133,8 @@ def build_pdf(chart: dict, compat: dict = None, interpretation: str = None,
         for d in compat.get("doshas", []):
             if d["active"]:
                 story.append(Paragraph(
-                    f"<b><font color='{_BAD}'>{d['name']} dosha</font></b> present — "
-                    f"{d['reason']}. A traditional caution.", body))
+                    f"<b><font color='{_BAD}'>{TE(d['name'])} dosha</font></b> present — "
+                    f"{TE(d['reason'])}. A traditional caution.", body))
             else:
                 story.append(Paragraph(
                     f"<b>{d['name']} dosha</b> present but <font color='{_GOOD}'>cancelled</font> "

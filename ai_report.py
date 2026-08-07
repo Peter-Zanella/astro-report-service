@@ -236,8 +236,12 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
         # Konjunktionen aus dem Engine-Produkt (keine eigene Messung)
         _conj = []
         for _e in (chart.get("conjunctions", {}) or {}).get(_lord, []):
-            _tag = " — SEHR ENG" if _e["orb"] < 3.0 else ""
-            _conj.append(f"{_e['with']} ({_e['orb']:.1f}°{_tag})")
+            _orb = _e.get("orb")
+            _wth = _e.get("with")
+            if _orb is None or _wth is None:
+                continue
+            _tag = " — SEHR ENG" if _orb < 3.0 else ""
+            _conj.append(f"{_wth} ({_orb:.1f}°{_tag})")
         f["lagna"]["lord_details"] = {
             "sign":      _ld.get("sign"),
             "house":     _ld.get("house"),

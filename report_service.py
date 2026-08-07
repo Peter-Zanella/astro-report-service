@@ -31,6 +31,10 @@ from __future__ import annotations
 import datetime as _dt
 import os
 import sqlite3
+import sys as _sys
+import threading as _threading
+import time as _time
+import traceback as _traceback
 from html import escape
 from pathlib import Path
 
@@ -46,15 +50,43 @@ import chart_html
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 BASE_URL   = os.environ.get("BASE_URL", "http://localhost:8000")
 DEV_NO_STRIPE = os.environ.get("DEV_NO_STRIPE") == "1"
-TEST_MODE  = DEV_NO_STRIPE or os.environ.get("TEST_MODE") == "1"
-# Optional secret for the test entrances. If set, /report and /prasna without a
-# Stripe session require ?key=<TEST_KEY>; without it, TEST_MODE is open to all.
 TEST_KEY   = os.environ.get("TEST_KEY", "").strip()
+
+# ── production safety for the free "test" entrances ──────────────────────────
+# Free test generation bypasses Stripe entirely, so it must NEVER be reachable
+# on a production deployment. Two hard guards:
+#   1. If a LIVE Stripe key is configured, test mode is forced OFF regardless of
+#      TEST_MODE/DEV_NO_STRIPE (prevents an accidental env var from opening free
+#      premium reports in prod).
+#   2. Without a TEST_KEY, test access is only honoured on a localhost BASE_URL
+#      (local dev). On any real domain a TEST_KEY is required.
+_STRIPE_LIVE   = os.environ.get("STRIPE_SECRET_KEY", "").startswith("sk_live")
+_LOCAL_DEPLOY  = BASE_URL.startswith(("http://localhost", "http://127.", "http://0.0.0.0"))
+_TEST_REQUESTED = DEV_NO_STRIPE or os.environ.get("TEST_MODE") == "1"
+TEST_MODE  = _TEST_REQUESTED and not _STRIPE_LIVE
+if _TEST_REQUESTED and _STRIPE_LIVE:
+    print("[SECURITY] TEST_MODE/DEV_NO_STRIPE ignored: a live Stripe key is present.",
+          file=_sys.stderr)
 
 
 def _test_access(key: str) -> bool:
     """True if free test generation is allowed for this request."""
-    return TEST_MODE and (not TEST_KEY or key == TEST_KEY)
+    if not TEST_MODE:
+        return False
+    if TEST_KEY:
+        return key == TEST_KEY
+    return _LOCAL_DEPLOY          # no TEST_KEY → localhost dev only
+
+
+def _is_test_session(sid: str) -> bool:
+    """True if `sid` is a trusted test session id. Without a TEST_KEY the prefix
+    is guessable ('TEST-'), so such ids are only trusted on a localhost deploy —
+    otherwise anyone could POST a 'TEST-…' id to get a free paid report."""
+    if not TEST_MODE:
+        return False
+    if not sid.startswith((_test_prefix("TEST"), _test_prefix("PRASNA"))):
+        return False
+    return bool(TEST_KEY) or _LOCAL_DEPLOY
 
 
 def _test_prefix(kind: str = "TEST") -> str:
@@ -79,12 +111,93 @@ PRICE_DEPTH = {
     "price_MATCH":   ("partner", "Partnerschafts-Bericht"),
     "price_PRASNA":  ("prasna",  "Prāśna-Bericht"),
 }
-DEFAULT_DEPTH = ("premium", "Bericht")
+# NOTE: intentionally NO default depth. get_paid_session() fails closed on an
+# unknown/unmapped price id rather than granting a premium report.
 
 PAL = {"ink": "#2b2118", "paper": "#fdf6e9", "paper2": "#f6ecd6",
        "gold": "#b8902f", "accent": "#9a342c", "line": "#e3d6b8", "muted": "#8a7a5c"}
 
 app = FastAPI(title="Jyotiṣa Report Service")
+
+
+# ── simple in-process rate limiting (fixed window per client IP) ─────────────
+# Single-worker deployments (Render/Railway free tier) → an in-memory limiter is
+# sufficient to blunt the expensive LLM/engine endpoints. For multi-worker setups
+# move this to Redis.
+_RL_LOCK = _threading.Lock()
+_RL: dict = {}          # ip -> (count, window_start_monotonic)
+
+
+def _client_ip(request) -> str:
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "?"
+
+
+def _rate_ok(ip: str, limit: int, window: float) -> bool:
+    """True if this IP is under `limit` requests in the last `window` seconds."""
+    now = _time.monotonic()
+    with _RL_LOCK:
+        cnt, start = _RL.get(ip, (0, now))
+        if now - start > window:
+            cnt, start = 0, now
+        cnt += 1
+        _RL[ip] = (cnt, start)
+        if len(_RL) > 4096:                     # opportunistic cleanup
+            for k in [k for k, (_c, s) in list(_RL.items()) if now - s > window]:
+                _RL.pop(k, None)
+        return cnt <= limit
+
+
+# ── PII retention: sweep cached charts/PDFs/HTML + delivery rows past TTL ─────
+RETENTION_DAYS = int(os.environ.get("REPORT_RETENTION_DAYS", "90"))
+_SWEEP_LOCK = _threading.Lock()
+_LAST_SWEEP = [0.0]
+
+
+def _maybe_sweep(force: bool = False) -> None:
+    """Delete report_cache files and delivery rows older than RETENTION_DAYS.
+    Throttled to once per hour. PII (name, birth data, lat/lon) must not linger
+    on disk indefinitely."""
+    if RETENTION_DAYS <= 0:
+        return
+    now = _time.monotonic()
+    with _SWEEP_LOCK:
+        if not force and (now - _LAST_SWEEP[0]) < 3600:
+            return
+        _LAST_SWEEP[0] = now
+    cutoff = _time.time() - RETENTION_DAYS * 86400
+    try:
+        for f in _CACHE_DIR.glob("*"):
+            try:
+                if f.is_file() and f.stat().st_mtime < cutoff:
+                    f.unlink()
+            except OSError:
+                pass
+    except Exception:
+        _traceback.print_exc(file=_sys.stderr)
+    try:
+        iso_cutoff = (_dt.datetime.utcnow()
+                      - _dt.timedelta(days=RETENTION_DAYS)).isoformat()
+        con = _db()
+        con.execute("DELETE FROM deliveries WHERE created < ?", (iso_cutoff,))
+        con.commit(); con.close()
+    except Exception:
+        _traceback.print_exc(file=_sys.stderr)
+
+
+# ── access control for read/compute endpoints ───────────────────────────────
+def _is_known_session(sid: str) -> bool:
+    """Authorise /view-adjacent read & compute endpoints: only sessions we
+    actually issued a report for. already_done() reads SQLite (survives the free
+    tier's disk spin-down); cache + test-session checks cover fresh/local cases.
+    Prevents anonymous callers from driving the engine with an arbitrary sid."""
+    if not sid:
+        return False
+    return (already_done(sid) or _is_test_session(sid)
+            or _HTML_CACHE.get(sid) is not None
+            or _CHART_CACHE.get(sid) is not None)
 
 
 # ── Stripe helpers ────────────────────────────────────────────────────────────
@@ -96,7 +209,7 @@ def _stripe():
 
 def get_paid_session(session_id: str, want_depth: str = ""):
     """Return (ok, info) where info has email, name, depth, label. Verifies payment."""
-    if TEST_MODE and session_id.startswith((_test_prefix("TEST"), _test_prefix("PRASNA"))):
+    if _is_test_session(session_id):
         depth = want_depth if want_depth in ("basis", "premium", "prasna",
                                              "prasna_zusatz", "year",
                                              "partner", "frage") else "premium"
@@ -112,15 +225,26 @@ def get_paid_session(session_id: str, want_depth: str = ""):
         stripe = _stripe()
         s = stripe.checkout.Session.retrieve(session_id, expand=["line_items"])
     except Exception:
-        return False, {"error": "Session nicht gefunden."}
+        # Log the real cause (network/Stripe outage vs. genuinely unknown id) so a
+        # transient failure isn't silently misreported as "not found" forever.
+        _traceback.print_exc(file=_sys.stderr)
+        return False, {"error": "Session konnte nicht geprüft werden. "
+                                "Bitte später erneut versuchen oder uns kontaktieren."}
     if s.get("payment_status") != "paid":
         return False, {"error": "Zahlung nicht bestätigt."}
-    depth, label = DEFAULT_DEPTH
+    # Fail CLOSED: depth is derived only from a known Stripe price id. An unknown
+    # or unreadable price must not silently grant a premium report (price/param
+    # tampering, or a cheaper product with an unmapped id).
     try:
         price_id = s["line_items"]["data"][0]["price"]["id"]
-        depth, label = PRICE_DEPTH.get(price_id, DEFAULT_DEPTH)
     except Exception:
-        pass
+        price_id = None
+    if price_id not in PRICE_DEPTH:
+        print(f"[BILLING] unmapped/again price_id={price_id!r} for session "
+              f"{session_id[:12]}… — refusing.", file=_sys.stderr)
+        return False, {"error": "Produkt nicht erkannt — bitte kontaktiere uns "
+                                "mit deiner Zahlungsbestätigung."}
+    depth, label = PRICE_DEPTH[price_id]
     cd = s.get("customer_details") or {}
     return True, {"email": cd.get("email") or "", "name": cd.get("name") or "",
                   "depth": depth, "label": label,
@@ -164,8 +288,12 @@ def already_done(session_id: str) -> bool:
 
 # ── HTML (on-brand, minimal) ──────────────────────────────────────────────────
 def _page(title: str, inner: str) -> str:
+    # referrer=no-referrer: the report URL carries the session_id (a bearer token),
+    # so no Referer header must reach the Google Fonts CDN or any cross-origin host.
     return f"""<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box}} body{{margin:0;background:{PAL['paper']};color:{PAL['ink']};
@@ -313,7 +441,7 @@ def health():
         eng = "swiss-ephemeris"
     except ImportError:
         eng = "fallback"
-    return JSONResponse({"ok": True, "engine": eng, "test_mode": TEST_MODE})
+    return JSONResponse({"ok": True, "engine": eng})
 
 
 @app.get("/report", response_class=HTMLResponse)
@@ -338,12 +466,17 @@ def report_form(session_id: str = "", depth: str = "", key: str = ""):
 
 
 @app.post("/generate")
-def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form(""),
+def generate(request: Request,
+             session_id: str = Form(...), name: str = Form(""), date: str = Form(""),
              time: str = Form("12:00"), city: str = Form(...),
              lang: str = Form("de"), depth: str = Form(""),
              gender: str = Form(""), occupation: str = Form(""), context: str = Form(""),
              b_day: str = Form(""), b_month: str = Form(""), b_year: str = Form(""),
              q1: str = Form(""), q2: str = Form(""), q3: str = Form("")):
+    if not _rate_ok(_client_ip(request), limit=10, window=600.0):
+        return HTMLResponse(msg_html("Zu viele Anfragen",
+                            "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
+    _maybe_sweep()
     ok, info = get_paid_session(session_id, want_depth=depth)
     if not ok:
         return HTMLResponse(msg_html("Zahlung prüfen",
@@ -407,7 +540,7 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
         return HTMLResponse(msg_html("Etwas ist schiefgelaufen",
-                            f"Bitte versuche es erneut oder melde dich bei uns. ({escape(str(e))})",
+                            "Bitte versuche es erneut oder melde dich bei uns — falls es erneut auftritt, kontaktiere uns bitte.",
                             "err"), 500)
 
     fn = f"{info['label'].replace(' ', '_')}.pdf"
@@ -431,7 +564,7 @@ def generate(session_id: str = Form(...), name: str = Form(""), date: str = Form
         "birth_year": y,
     }
     # Redirect directly to the HTML view — it has a PDF download button built in
-    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}", status_code=303)
+    return RedirectResponse(url=f"/view/{session_id}", status_code=303)
 
 
 
@@ -506,7 +639,8 @@ sind dann weniger genau.</p>""")
 
 
 @app.post("/partner-generate")
-def partner_generate(session_id: str = Form(...), lang: str = Form("de"),
+def partner_generate(request: Request,
+                     session_id: str = Form(...), lang: str = Form("de"),
                      a_name: str = Form(...), a_day: str = Form(...),
                      a_month: str = Form(...), a_year: str = Form(...),
                      a_time: str = Form("12:00"), a_city: str = Form(...),
@@ -515,6 +649,10 @@ def partner_generate(session_id: str = Form(...), lang: str = Form("de"),
                      b_month: str = Form(...), b_year: str = Form(...),
                      b_time: str = Form("12:00"), b_city: str = Form(...),
                      b_gender: str = Form("")):
+    if not _rate_ok(_client_ip(request), limit=10, window=600.0):
+        return HTMLResponse(msg_html("Zu viele Anfragen",
+                            "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
+    _maybe_sweep()
     ok, info = get_paid_session(session_id, want_depth="partner")
     if not ok:
         return HTMLResponse(msg_html("Zahlung prüfen",
@@ -564,7 +702,7 @@ def partner_generate(session_id: str = Form(...), lang: str = Form("de"),
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
         return HTMLResponse(msg_html("Etwas ist schiefgelaufen",
-                            f"Bitte versuche es erneut oder melde dich bei uns. ({escape(str(e))})",
+                            "Bitte versuche es erneut oder melde dich bei uns — falls es erneut auftritt, kontaktiere uns bitte.",
                             "err"), 500)
 
     fn = f"{info['label'].replace(' ', '_')}.pdf"
@@ -583,7 +721,7 @@ def partner_generate(session_id: str = Form(...), lang: str = Form("de"),
         "natal_lagna_si": chart.get("lagna_idx"),
         "birth_year": y,
     }
-    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}",
+    return RedirectResponse(url=f"/view/{session_id}",
                             status_code=303)
 
 
@@ -743,6 +881,7 @@ def prasna_page(session_id: str = "", key: str = ""):
 
 @app.post("/prasna-generate")
 def prasna_generate(
+    request: Request,
     session_id: str = Form(...),
     question: str = Form(...),
     name: str = Form(""),
@@ -758,6 +897,10 @@ def prasna_generate(
     birth_city: str = Form(""),
     bb_day: str = Form(""), bb_month: str = Form(""), bb_year: str = Form(""),
 ):
+    if not _rate_ok(_client_ip(request), limit=10, window=600.0):
+        return HTMLResponse(msg_html("Zu viele Anfragen",
+                            "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
+    _maybe_sweep()
     ok, info = get_paid_session(session_id, want_depth="prasna")
     if not ok:
         return HTMLResponse(msg_html("Zahlung prüfen",
@@ -825,7 +968,7 @@ def prasna_generate(
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
         return HTMLResponse(msg_html("Fehler",
-                            f"Bitte erneut versuchen. ({escape(str(e))})", "err"), 500)
+                            "Bitte erneut versuchen — falls es erneut auftritt, kontaktiere uns bitte.", "err"), 500)
 
     fn = f"Prasna_{y}{mo:02d}{d:02d}.pdf"
     # Frage-Moment cachen, damit Zusatzfragen dasselbe Prāśna-Chart nutzen können
@@ -841,7 +984,7 @@ def prasna_generate(
     _PDF_CACHE[session_id + "-technik"] = (
         pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
-    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}", status_code=303)
+    return RedirectResponse(url=f"/view/{session_id}", status_code=303)
 
 
 
@@ -849,12 +992,19 @@ def prasna_generate(
 from fastapi.responses import JSONResponse
 
 @app.get("/varshaphala/{session_id}/{age}")
-def varshaphala_age(session_id: str, age: int,
+def varshaphala_age(request: Request, session_id: str, age: int,
                     sun: float = None, lagna: int = None,
                     mo: int = None, d: int = None,
                     lat: float = None, lon: float = None, by: int = None):
     """Recompute Varshaphala for a given age.
     Birth params come from query args (survive spin-down) or fall back to disk cache."""
+    # Access control: only sessions we issued a report for may drive the engine —
+    # the query-param path previously allowed fully anonymous computation.
+    if not _is_known_session(session_id):
+        return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
+    if not _rate_ok(_client_ip(request), limit=60, window=60.0):
+        return JSONResponse({"error": "Zu viele Anfragen — bitte kurz warten."},
+                            status_code=429)
     # Prefer explicit query params (robust); fall back to disk cache
     if all(v is not None for v in (sun, lagna, mo, d, lat, lon, by)):
         params = {"natal_sun_sid": sun, "natal_lagna_si": lagna,
@@ -901,14 +1051,19 @@ def varshaphala_age(session_id: str, age: int,
     except Exception as e:
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
-        return JSONResponse({"error": f"Berechnungsfehler: {e}"})
+        return JSONResponse({"error": "Berechnungsfehler — bitte prüfe die Eingaben oder versuche es später erneut."})
 
 @app.get("/compatibility/{session_id}")
-def compatibility(session_id: str,
+def compatibility(request: Request, session_id: str,
                   date: str = "", time: str = "12:00", city: str = ""):
     """Compute Ashtakūṭa + Mangal Dosha + house overlays between the report's
     chart (person A, from disk cache) and a second person B (from query args)."""
     from fastapi.responses import JSONResponse
+    if not _is_known_session(session_id):
+        return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
+    if not _rate_ok(_client_ip(request), limit=30, window=60.0):
+        return JSONResponse({"error": "Zu viele Anfragen — bitte kurz warten."},
+                            status_code=429)
     try:
         params = _CHART_CACHE.get(session_id)
         if not params:
@@ -944,7 +1099,7 @@ def compatibility(session_id: str,
     except Exception as e:
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
-        return JSONResponse({"error": f"Berechnungsfehler: {e}"})
+        return JSONResponse({"error": "Berechnungsfehler — bitte prüfe die Eingaben oder versuche es später erneut."})
 
 
 if __name__ == "__main__":
@@ -1046,7 +1201,7 @@ def report_frage(session_id: str = "", ref: str = ""):
     ok, info = get_paid_session(session_id, want_depth="frage")
     if not ok:
         return HTMLResponse(msg_html("Kein Zugang",
-                            info.get("error", "Zahlung nicht bestätigt."),
+                            escape(info.get("error", "Zahlung nicht bestätigt.")),
                             "err"), 403)
     anchor = info.get("ref") or (ref if info.get("test") else "")
     params = _CHART_CACHE.get(anchor) if anchor else None
@@ -1079,12 +1234,17 @@ mit Blick auf die passenden Häuser, Kārakas und deine aktuelle Daśā-Zeit.</p
 
 
 @app.post("/report-frage-generate", response_class=HTMLResponse)
-def report_frage_generate(session_id: str = Form(...), ref: str = Form(...),
+def report_frage_generate(request: Request,
+                          session_id: str = Form(...), ref: str = Form(...),
                           question: str = Form(...), lang: str = Form("de")):
+    if not _rate_ok(_client_ip(request), limit=10, window=600.0):
+        return HTMLResponse(msg_html("Zu viele Anfragen",
+                            "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
+    _maybe_sweep()
     ok, info = get_paid_session(session_id, want_depth="frage")
     if not ok:
         return HTMLResponse(msg_html("Kein Zugang",
-                            info.get("error", "Zahlung nicht bestätigt."),
+                            escape(info.get("error", "Zahlung nicht bestätigt.")),
                             "err"), 403)
     anchor = info.get("ref") or (ref if info.get("test") else "")
     params = _CHART_CACHE.get(anchor) if anchor else None
@@ -1120,14 +1280,13 @@ def report_frage_generate(session_id: str = Form(...), ref: str = Form(...),
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
         return HTMLResponse(msg_html("Fehler bei der Berechnung",
-                            f"{type(e).__name__}: {escape(str(e))} — bitte "
-                            "erneut versuchen.", "err"), 500)
+                            "Ein interner Fehler ist aufgetreten — bitte erneut versuchen oder uns kontaktieren.", "err"), 500)
     fn = "Zusatzfrage_zum_Bericht.pdf"
     _PDF_CACHE[session_id] = (pdf, fn)
     _PDF_CACHE[session_id + "-technik"] = (
         pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
-    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}",
+    return RedirectResponse(url=f"/view/{session_id}",
                             status_code=303)
 
 
@@ -1142,7 +1301,7 @@ def prasna_followup(session_id: str = "", ref: str = ""):
     ok, info = get_paid_session(session_id, want_depth="prasna_zusatz")
     if not ok:
         return HTMLResponse(msg_html("Kein Zugang",
-                            info.get("error", "Zahlung nicht bestätigt."),
+                            escape(info.get("error", "Zahlung nicht bestätigt.")),
                             "err"), 403)
     anchor = info.get("ref") or (ref if info.get("test") else "")
     params = _CHART_CACHE.get(anchor) if anchor else None
@@ -1176,12 +1335,17 @@ ursprünglichen Frage:</p>
 
 
 @app.post("/prasna-followup-generate", response_class=HTMLResponse)
-def prasna_followup_generate(session_id: str = Form(...), ref: str = Form(...),
+def prasna_followup_generate(request: Request,
+                             session_id: str = Form(...), ref: str = Form(...),
                              question: str = Form(...), lang: str = Form("de")):
+    if not _rate_ok(_client_ip(request), limit=10, window=600.0):
+        return HTMLResponse(msg_html("Zu viele Anfragen",
+                            "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
+    _maybe_sweep()
     ok, info = get_paid_session(session_id, want_depth="prasna_zusatz")
     if not ok:
         return HTMLResponse(msg_html("Kein Zugang",
-                            info.get("error", "Zahlung nicht bestätigt."),
+                            escape(info.get("error", "Zahlung nicht bestätigt.")),
                             "err"), 403)
     anchor = info.get("ref") or (ref if info.get("test") else "")
     params = _CHART_CACHE.get(anchor) if anchor else None
@@ -1221,18 +1385,18 @@ def prasna_followup_generate(session_id: str = Form(...), ref: str = Form(...),
         html_view = chart_html.build_html(chart, interpretation=text,
                                           interpretation_title=title,
                                           upsell_url=_prasna_upsell_url(anchor))
-    except Exception as e:
+    except Exception:
         con = _db(); con.execute("DELETE FROM deliveries WHERE session_id=?", (session_id,))
         con.commit(); con.close()
+        _traceback.print_exc(file=_sys.stderr)
         return HTMLResponse(msg_html("Fehler bei der Berechnung",
-                            f"{type(e).__name__}: {escape(str(e))} — bitte "
-                            "erneut versuchen.", "err"), 500)
+                            "Ein interner Fehler ist aufgetreten — bitte erneut versuchen oder uns kontaktieren.", "err"), 500)
     fn = "Prasna_Vertiefungsfrage.pdf"
     _PDF_CACHE[session_id] = (pdf, fn)
     _PDF_CACHE[session_id + "-technik"] = (
         pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
-    return RedirectResponse(url=f"/view/{session_id}?session_id={session_id}", status_code=303)
+    return RedirectResponse(url=f"/view/{session_id}", status_code=303)
 
 
 # ── Muhūrta-Kalender API (flache Moduldatei muhurta_route.py) ────────────────
