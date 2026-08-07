@@ -114,8 +114,11 @@ PRICE_DEPTH = {
 # NOTE: intentionally NO default depth. get_paid_session() fails closed on an
 # unknown/unmapped price id rather than granting a premium report.
 
-PAL = {"ink": "#2b2118", "paper": "#fdf6e9", "paper2": "#f6ecd6",
-       "gold": "#b8902f", "accent": "#9a342c", "line": "#e3d6b8", "muted": "#8a7a5c"}
+# Dark theme — matches the interactive report view (chart_html.py :root vars),
+# so the order form and the finished report look like one product.
+PAL = {"ink": "#e8e4f0", "paper": "#0d0d1f", "paper2": "#13132a",
+       "gold": "#c9a84c", "accent": "#c9a84c", "line": "#2a2a4a", "muted": "#8888bb",
+       "field": "#1a1a35"}
 
 app = FastAPI(title="Jyotiṣa Report Service")
 
@@ -299,22 +302,29 @@ def _page(title: str, inner: str) -> str:
 *{{box-sizing:border-box}} body{{margin:0;background:{PAL['paper']};color:{PAL['ink']};
 font-family:'Inter',system-ui,sans-serif;line-height:1.6;display:flex;min-height:100vh;
 align-items:center;justify-content:center;padding:24px}}
-.card{{background:{PAL['paper2']};border:1px solid {PAL['line']};border-radius:8px;
+body::before{{content:'';position:fixed;inset:0;z-index:-1;background:
+radial-gradient(ellipse at 20% 30%,rgba(123,111,255,.06) 0%,transparent 60%),
+radial-gradient(ellipse at 80% 70%,rgba(201,168,76,.04) 0%,transparent 50%),{PAL['paper']}}}
+.card{{background:{PAL['paper2']};border:1px solid {PAL['line']};border-radius:12px;
 max-width:520px;width:100%;padding:40px}}
-h1{{font-family:'Cormorant Garamond',serif;font-size:2rem;margin:0 0 .2em;color:{PAL['accent']}}}
+h1{{font-family:'Cormorant Garamond',serif;font-size:2.1rem;margin:0 0 .2em;color:{PAL['gold']};letter-spacing:.03em}}
 .ey{{font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:{PAL['gold']};
 font-weight:600;margin-bottom:10px}}
-label{{display:block;font-size:.85rem;font-weight:600;margin:14px 0 4px}}
-input,select{{width:100%;padding:11px 12px;border:1px solid {PAL['line']};border-radius:4px;
-background:{PAL['paper2']};color:{PAL['ink']};font-size:1rem;font-family:inherit}}
-input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{{-webkit-box-shadow:0 0 0 30px {PAL['paper2']} inset !important;-webkit-text-fill-color:{PAL['ink']} !important}}
+p{{color:{PAL['ink']}}}
+label{{display:block;font-size:.85rem;font-weight:600;margin:14px 0 4px;color:{PAL['ink']}}}
+input,select,textarea{{width:100%;padding:11px 12px;border:1px solid {PAL['line']};border-radius:6px;
+background:{PAL['field']};color:{PAL['ink']};font-size:1rem;font-family:inherit}}
+input:focus,select:focus,textarea:focus{{outline:none;border-color:{PAL['gold']}}}
+input::placeholder,textarea::placeholder{{color:{PAL['muted']}}}
+input[type=date],input[type=time]{{color-scheme:dark}}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{{-webkit-box-shadow:0 0 0 30px {PAL['field']} inset !important;-webkit-text-fill-color:{PAL['ink']} !important}}
 .row{{display:flex;gap:12px;flex-wrap:wrap}} .row>div{{flex:1;min-width:150px}}
 @media(max-width:480px){{.row{{flex-direction:column;gap:8px}}}}
-button{{margin-top:22px;width:100%;background:{PAL['ink']};color:{PAL['paper']};border:0;
-padding:14px;border-radius:3px;font-weight:600;font-size:1rem;cursor:pointer}}
-button:hover{{background:#3c2f20}}
+button{{margin-top:22px;width:100%;background:{PAL['gold']};color:#0d0d1f;border:0;
+padding:14px;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer}}
+button:hover{{background:#d4b560}}
 .muted{{color:{PAL['muted']};font-size:.85rem;margin-top:14px}}
-.ok{{color:#2e7d4f}} .err{{color:{PAL['accent']}}}
+.ok{{color:#4caf7d}} .err{{color:#e05c5c}}
 .dot{{color:{PAL['gold']}}}
 </style></head><body><div class="card">{inner}</div></body></html>"""
 
@@ -335,7 +345,7 @@ def form_html(session_id: str, info: dict) -> str:
         questions_block = ""
     test = info.get("test")
     cur_depth = info.get("depth", "premium")
-    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed #b8902f;'
+    banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed #c9a84c;'
               'padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – keine Zahlung nötig.</p>'
               if test else "")
     def _opt(val, label):
@@ -355,16 +365,11 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 <form method="post" action="/generate" onsubmit="document.getElementById('working').style.display='block';var b=this.querySelector('button[type=submit]');b.textContent='⏳ Bericht wird erstellt…';setTimeout(function(){{b.disabled=true;}},50);">
 <input type="hidden" name="session_id" value="{escape(session_id)}">
 <label>Name</label><input name="name" value="{escape(info.get('name',''))}" required>
-<div class="row"><div><label>Geburtsdatum</label>
 <div class="row">
-  <div><label>Tag</label><input name="b_day" inputmode="numeric" pattern="[0-9]*"
-    placeholder="24" maxlength="2" required style="text-align:center"></div>
-  <div><label>Monat</label><input name="b_month" inputmode="numeric" pattern="[0-9]*"
-    placeholder="8" maxlength="2" required style="text-align:center"></div>
-  <div><label>Jahr</label><input name="b_year" inputmode="numeric" pattern="[0-9]*"
-    placeholder="1957" maxlength="4" required style="text-align:center"></div>
-</div></div>
-<div><label>Geburtszeit</label><input type="time" name="time" value="12:00"></div></div>
+  <div><label>Geburtsdatum</label>
+    <input type="date" name="date" min="1900-01-01" max="2035-12-31" required></div>
+  <div><label>Geburtszeit</label><input type="time" name="time" value="12:00"></div>
+</div>
 <label>Geburtsort (Stadt, Land)</label>
 <input name="city" placeholder="z.B. Zürich, Schweiz" required>
 <div class="row"><div><label>Geschlecht <span style="color:{PAL['muted']};font-weight:400">(optional)</span></label>
@@ -380,12 +385,10 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 {depth_field}
 <button type="submit">Bericht erstellen</button>
 </form>
-<div id="working" style="display:none;margin-top:18px;padding:14px;background:#fff8e8;border:1px solid #b8902f;border-radius:6px;text-align:center;font-size:.9rem;color:#8a7a5c">
+<div id="working" style="display:none;margin-top:18px;padding:14px;background:rgba(201,168,76,.1);border:1px solid #c9a84c;border-radius:8px;text-align:center;font-size:.9rem;color:#c9a84c">
   ⏳ Berechnung läuft — Planetenpositionen, KI-Deutung, PDF.<br>
   <small>Dies dauert 1–3 Minuten. Bitte die Seite nicht schliessen.</small>
-</div>
-<p class="muted">Geburtszeit unbekannt? 12:00 ist eine faire Näherung – Aszendent/Häuser
-sind dann weniger genau.</p>""")
+</div>""")
 
 
 def msg_html(title: str, body: str, kind: str = "") -> str:
@@ -600,16 +603,11 @@ def _person_fields(prefix: str, title: str) -> str:
 <div style="border:1px solid {PAL['line']};border-radius:6px;padding:14px 16px;margin:14px 0">
 <div class="ey"><span class="dot">◆</span> {title}</div>
 <label>Name</label><input name="{prefix}_name" required>
-<div class="row"><div><label>Geburtsdatum</label>
 <div class="row">
-  <div><label>Tag</label><input name="{prefix}_day" inputmode="numeric" pattern="[0-9]*"
-    placeholder="24" maxlength="2" required style="text-align:center"></div>
-  <div><label>Monat</label><input name="{prefix}_month" inputmode="numeric" pattern="[0-9]*"
-    placeholder="8" maxlength="2" required style="text-align:center"></div>
-  <div><label>Jahr</label><input name="{prefix}_year" inputmode="numeric" pattern="[0-9]*"
-    placeholder="1957" maxlength="4" required style="text-align:center"></div>
-</div></div>
-<div><label>Geburtszeit</label><input type="time" name="{prefix}_time" value="12:00"></div></div>
+  <div><label>Geburtsdatum</label>
+    <input type="date" name="{prefix}_date" min="1900-01-01" max="2035-12-31" required></div>
+  <div><label>Geburtszeit</label><input type="time" name="{prefix}_time" value="12:00"></div>
+</div>
 <label>Geburtsort (Stadt, Land)</label>
 <input name="{prefix}_city" placeholder="z.B. Zürich, Schweiz" required>
 <label>Geschlecht <span style="color:{PAL['muted']};font-weight:400">(optional)</span></label>
@@ -621,7 +619,7 @@ def _person_fields(prefix: str, title: str) -> str:
 
 def partner_form_html(session_id: str, info: dict) -> str:
     test = info.get("test")
-    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed #b8902f;'
+    banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed #c9a84c;'
               'padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – keine Zahlung nötig.</p>'
               if test else "")
     return _page("Geburtsdaten – " + info["label"], f"""
@@ -642,23 +640,19 @@ werden diese Einzelfaktoren entsprechend relativiert gedeutet.</p>
 <option value="en">English</option></select></div>
 <button type="submit">Partner-Bericht erstellen</button>
 </form>
-<div id="working" style="display:none;margin-top:18px;padding:14px;background:#fff8e8;border:1px solid #b8902f;border-radius:6px;text-align:center;font-size:.9rem;color:#8a7a5c">
+<div id="working" style="display:none;margin-top:18px;padding:14px;background:rgba(201,168,76,.1);border:1px solid #c9a84c;border-radius:6px;text-align:center;font-size:.9rem;color:#c9a84c">
   ⏳ Berechnung läuft — zwei Horoskope, Kompatibilität, KI-Deutung, PDF.<br>
   <small>Dies dauert 1–3 Minuten. Bitte die Seite nicht schliessen.</small>
-</div>
-<p class="muted">Geburtszeit unbekannt? 12:00 ist eine faire Näherung – Aszendent/Häuser
-sind dann weniger genau.</p>""")
+</div>""")
 
 
 @app.post("/partner-generate")
 def partner_generate(request: Request,
                      session_id: str = Form(...), lang: str = Form("de"),
-                     a_name: str = Form(...), a_day: str = Form(...),
-                     a_month: str = Form(...), a_year: str = Form(...),
+                     a_name: str = Form(...), a_date: str = Form(...),
                      a_time: str = Form("12:00"), a_city: str = Form(...),
                      a_gender: str = Form(""),
-                     b_name: str = Form(...), b_day: str = Form(...),
-                     b_month: str = Form(...), b_year: str = Form(...),
+                     b_name: str = Form(...), b_date: str = Form(...),
                      b_time: str = Form("12:00"), b_city: str = Form(...),
                      b_gender: str = Form("")):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
@@ -677,8 +671,8 @@ def partner_generate(request: Request,
         return HTMLResponse(done_html(session_id))
 
     try:
-        def _build(name, day, month, year, time_s, city, gender, who):
-            y, mo, d = int(year), int(month), int(day)
+        def _build(name, date_s, time_s, city, gender, who):
+            y, mo, d = _parse_date_de(date_s)     # accepts YYYY-MM-DD (native date) + DD.MM.YYYY
             hh, mm = (int(x) for x in (time_s or "12:00").split(":"))
             loc = E.resolve_location(city, y, mo, d, hh, mm)
             if not loc:
@@ -692,9 +686,9 @@ def partner_generate(request: Request,
             return ch, loc, (y, mo, d, hh, mm)
 
         chart, loc_a, (y, mo, d, hh, mm) = _build(
-            a_name, a_day, a_month, a_year, a_time, a_city, a_gender, "Person A")
+            a_name, a_date, a_time, a_city, a_gender, "Person A")
         chart_b, _loc_b, _ = _build(
-            b_name, b_day, b_month, b_year, b_time, b_city, b_gender, "Person B")
+            b_name, b_date, b_time, b_city, b_gender, "Person B")
 
         # Vertrag von ai_report._build_partner_facts:
         chart["partner_chart"] = chart_b
@@ -812,7 +806,7 @@ def _prasna_upsell_url(anchor_sid: str):
 def _prasna_form_html(session_id: str, info: dict) -> str:
     now = _dt.datetime.now()
     test = info.get("test")
-    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed #b8902f;'
+    banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed #c9a84c;'
               'padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – keine Zahlung nötig.</p>'
               if test else "")
     return _page("Prāśna — Horoskop der Frage", f"""
@@ -849,24 +843,20 @@ enthält die Antwort. Stelle deine Frage aufrichtig — der Moment zählt.</p>
     <span style="color:{PAL['muted']};font-weight:400">(optional — Prāśna Plus)</span></label>
   <p class="muted" style="margin:4px 0 10px;font-size:.85rem">
     Mit Geburtsdaten prüft die Deutung zusätzlich, ob deine aktuelle
-    Lebensphase (Daśā) die Antwort des Prāśna stützt. Alle drei Felder
-    ausfüllen — oder alle leer lassen.</p>
+    Lebensphase (Daśā) die Antwort des Prāśna stützt. Geburtsdatum und -ort
+    ausfüllen — oder beide leer lassen.</p>
   <div class="row">
-    <div><label>Geb.-Tag</label><input name="bb_day" inputmode="numeric" pattern="[0-9]*"
-      placeholder="24" maxlength="2" style="text-align:center"></div>
-    <div><label>Geb.-Monat</label><input name="bb_month" inputmode="numeric" pattern="[0-9]*"
-      placeholder="8" maxlength="2" style="text-align:center"></div>
-    <div><label>Geb.-Jahr</label><input name="bb_year" inputmode="numeric" pattern="[0-9]*"
-      placeholder="1957" maxlength="4" style="text-align:center"></div>
+    <div><label>Geburtsdatum</label>
+      <input type="date" name="birth_date" min="1900-01-01" max="2035-12-31"></div>
     <div><label>Geburtszeit</label>
-    <input type="time" name="birth_time"></div>
+      <input type="time" name="birth_time"></div>
   </div>
   <label>Geburtsort (Stadt, Land)</label>
   <input name="birth_city" placeholder="z.B. Liestal, Schweiz">
 </div>
 <button type="submit">Prāśna berechnen</button>
 </form>
-<div id="pw" style="display:none;margin-top:18px;padding:14px;background:#fff8e8;
+<div id="pw" style="display:none;margin-top:18px;padding:14px;background:rgba(201,168,76,.1);
   border:1px solid {PAL['gold']};border-radius:6px;text-align:center;
   font-size:.9rem;color:{PAL['muted']}">
   ⏳ Berechnung läuft — Planetenpositionen, Signifikatoren, KI-Deutung.<br>
@@ -1278,8 +1268,8 @@ def report_frage(session_id: str = "", ref: str = ""):
             "Die Zusatzfrage bezieht sich auf einen bestehenden "
             "AstroVeda-Bericht, der auf dem Server nicht mehr verfügbar ist. "
             "Bitte melde dich bei uns — wir helfen sofort weiter.", "err"), 404)
-    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed '
-              '#b8902f;padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – '
+    banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed '
+              '#c9a84c;padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – '
               'keine Zahlung nötig.</p>' if info.get("test") else "")
     return HTMLResponse(_page("Zusatzfrage zu deinem Bericht", f"""
 <div class="ey"><span class="dot">◆</span> Zusatzfrage · dein Geburtshoroskop</div>
@@ -1378,8 +1368,8 @@ def prasna_followup(session_id: str = "", ref: str = ""):
             "Die Zusatzfrage bezieht sich auf ein bestehendes Prāśna, das "
             "auf dem Server nicht mehr verfügbar ist. Bitte melde dich bei "
             "uns — wir helfen sofort weiter.", "err"), 404)
-    banner = ('<p class="muted" style="background:#fff8e8;border:1px dashed '
-              '#b8902f;padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – '
+    banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed '
+              '#c9a84c;padding:8px 12px;border-radius:4px">⚙ TEST-MODUS – '
               'keine Zahlung nötig.</p>' if info.get("test") else "")
     return HTMLResponse(_page("Prāśna — Vertiefungsfrage", f"""
 <div class="ey"><span class="dot">◆</span> Prāśna · Vertiefungsfrage</div>
