@@ -2536,9 +2536,12 @@ def _nadi_points(na, nb):
     return 0.0 if _NADI[na] == _NADI[nb] else 8.0
 
 
-def compute_ashtakuta(chart_a, chart_b):
+def compute_ashtakuta(chart_a, chart_b, male="a"):
     """Full Ashtakūṭa (36-guṇa) compatibility between two charts.
-    Uses each chart's Moon nakshatra & sign. Returns a structured dict."""
+    Uses each chart's Moon nakshatra & sign. Returns a structured dict.
+    `male` ('a'|'b') marks which chart is the groom for the one gender-directional
+    kūṭa (Varna); everything else is symmetric. Default 'a' keeps the historical
+    chart_a=male convention (partner report), so existing callers are unaffected."""
     ma, mb = chart_a["planets"]["Moon"], chart_b["planets"]["Moon"]
     # resolve nakshatra index from name
     nak_names = [n for n, _ in NAKSHATRAS]
@@ -2548,10 +2551,10 @@ def compute_ashtakuta(chart_a, chart_b):
     deg_a = ma.get("lon", sa * 30) % 30   # Moon's degree within its sign
     deg_b = mb.get("lon", sb * 30) % 30
 
-    # Classical rule: point awarded when the groom's (chart_a = male) varna is
-    # equal to or HIGHER than the bride's (chart_b = female). Rank 3=Brahmin(high)
-    # … 0=Shudra(low), so male_rank >= female_rank.
-    varna = 1.0 if _VARNA_BY_SIGN.get(sa,0) >= _VARNA_BY_SIGN.get(sb,0) else 0.0
+    # Classical rule: point awarded when the groom's varna is equal to or HIGHER
+    # than the bride's. Rank 3=Brahmin(high) … 0=Shudra(low) → male_rank >= female_rank.
+    _s_male, _s_female = (sb, sa) if male == "b" else (sa, sb)
+    varna = 1.0 if _VARNA_BY_SIGN.get(_s_male,0) >= _VARNA_BY_SIGN.get(_s_female,0) else 0.0
     vashya = _vashya_points(sa, sb, deg_a, deg_b)
     tara = _tara_points(na, nb)
     yoni = _yoni_points(na, nb)
@@ -2615,9 +2618,13 @@ def _mangal_dosha(chart):
     }
 
 
-def compute_compatibility(chart_a, chart_b):
-    """Top-level: Ashtakūṭa + Mangal Dosha match + house overlays."""
-    ashta = compute_ashtakuta(chart_a, chart_b)
+def compute_compatibility(chart_a, chart_b, male="a"):
+    """Top-level: Ashtakūṭa + Mangal Dosha match + house overlays.
+    `male` ('a'|'b') tells the gender-directional kūṭas (Varna, Strī-Dīrgha,
+    Rāśi) which chart is the groom. Overlays and Mangal stay keyed to chart_a /
+    chart_b (i.e. the display 'A'/'B'), so callers can keep A = the report owner
+    regardless of gender. Default 'a' preserves the historical convention."""
+    ashta = compute_ashtakuta(chart_a, chart_b, male=male)
     md_a = _mangal_dosha(chart_a)
     md_b = _mangal_dosha(chart_b)
     # Mangal match: dosha cancels if both have it (or neither)
@@ -2646,7 +2653,7 @@ def compute_compatibility(chart_a, chart_b):
         "mangal": {"a": md_a, "b": md_b, "verdict": mangal_verdict, "ok": mangal_ok},
         "overlay_b_in_a": overlay(chart_a, chart_b),
         "overlay_a_in_b": overlay(chart_b, chart_a),
-        "extra_milana": compute_extra_milana(chart_a, chart_b),
+        "extra_milana": compute_extra_milana(chart_a, chart_b, male=male),
     }
 
 
@@ -2760,16 +2767,24 @@ def _rasi_kuta_check(sa_male, sb_female):
     }
 
 
-def compute_extra_milana(chart_a, chart_b):
-    """Extra factors. chart_a = male, chart_b = female (by caller convention)."""
+def compute_extra_milana(chart_a, chart_b, male="a"):
+    """Extra factors. `male` ('a'|'b') marks the groom chart. Strī-Dīrgha and
+    Rāśi-kūṭa are direction-sensitive (counted from the bride's nakshatra/sign to
+    the groom's); Vedha and Rajju are symmetric. Default 'a' keeps the historical
+    chart_a=male convention, so existing callers are unaffected."""
     ma, mb = chart_a["planets"]["Moon"], chart_b["planets"]["Moon"]
     nak_names = [n for n, _ in NAKSHATRAS]
-    na = nak_names.index(ma["nakshatra"])   # male
-    nb = nak_names.index(mb["nakshatra"])   # female
+    na = nak_names.index(ma["nakshatra"])
+    nb = nak_names.index(mb["nakshatra"])
     sa, sb = ma["sign_idx"], mb["sign_idx"]
+    # Assign groom/bride roles for the direction-sensitive checks.
+    if male == "b":
+        n_m, n_f, s_m, s_f = nb, na, sb, sa
+    else:
+        n_m, n_f, s_m, s_f = na, nb, sa, sb
     return {
-        "vedha":       _vedha_check(na, nb),
-        "rajju":       _rajju_check(na, nb),
-        "stri_dirgha": _stri_dirgha_check(na, nb),
-        "rasi_kuta":   _rasi_kuta_check(sa, sb),
+        "vedha":       _vedha_check(n_m, n_f),        # symmetric
+        "rajju":       _rajju_check(n_m, n_f),        # symmetric
+        "stri_dirgha": _stri_dirgha_check(n_m, n_f),  # from bride → groom
+        "rasi_kuta":   _rasi_kuta_check(s_m, s_f),    # groom/bride directional
     }

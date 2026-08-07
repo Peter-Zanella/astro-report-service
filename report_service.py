@@ -529,10 +529,22 @@ def generate(request: Request,
         depth = info["depth"]
         text = ai_report.generate_interpretation(chart, lang=lang, depth=depth)
         title = "Persönliche Deutung" if lang == "de" else "Personal Reading"
-        pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                   interpretation_title=title, variant="customer")
-        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                        interpretation_title=title, variant="full")
+        # HTML-Ansicht ist das interaktive Kernprodukt — zuerst bauen, damit sie
+        # auch vorliegt, wenn danach der PDF-Renderer scheitert.
+        _ups = _frage_upsell_url(session_id) if info.get("depth") == "premium" else None
+        html_view = chart_html.build_html(chart, interpretation=text,
+                                          interpretation_title=title, upsell_url=_ups)
+        # PDF isoliert: ein Fehler hier verwirft die schon erzeugte Deutung/HTML
+        # NICHT — der Kunde bekommt die Ansicht, das PDF kann später neu erzeugt
+        # werden, statt dass der ganze (teure) Bericht verloren geht.
+        pdf = pdf_tech = None
+        try:
+            pdf = pdf_report.build_pdf(chart, interpretation=text,
+                                       interpretation_title=title, variant="customer")
+            pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
+                                            interpretation_title=title, variant="full")
+        except Exception:
+            _traceback.print_exc(file=_sys.stderr)
     except Exception as e:
         # un-claim so the customer can retry
         con = _db(); con.execute("DELETE FROM deliveries WHERE session_id=?", (session_id,))
@@ -544,24 +556,24 @@ def generate(request: Request,
                             "err"), 500)
 
     fn = f"{info['label'].replace(' ', '_')}.pdf"
-    ititle = "Persönliche Deutung" if lang == "de" else "Personal Reading"
-    # Upsell: bezahlte Zusatzfrage zum Bericht (nur Premium sinnvoll)
-    _ups = _frage_upsell_url(session_id) if info.get("depth") == "premium" else None
-    html_view = chart_html.build_html(chart, interpretation=text,
-                                      interpretation_title=ititle,
-                                      upsell_url=_ups)
-    _PDF_CACHE[session_id]  = (pdf, fn)
-    _PDF_CACHE[session_id + "-technik"] = (
-        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
-    # Cache raw birth params so Varshaphala can be recomputed for any age
+    if pdf is not None:
+        _PDF_CACHE[session_id] = (pdf, fn)
+    if pdf_tech is not None:
+        _PDF_CACHE[session_id + "-technik"] = (
+            pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
+    # Cache raw birth params so Varshaphala can be recomputed for any age AND so
+    # /view can rebuild the interactive view after a cache loss without a new LLM
+    # call (interpretation + title + gender stored alongside the birth data).
     _CHART_CACHE[session_id] = {
         "y": y, "mo": mo, "d": d, "hh": hh, "mm": mm,
         "lat": loc["lat"], "lon": loc["lon"], "offset": loc["offset"],
-        "label": loc.get("label", city), "name": name,
+        "label": loc.get("label", city), "name": name, "gender": gender,
+        "iana": loc.get("iana", ""),
         "natal_sun_sid": chart.get("lons", {}).get("Sun"),
         "natal_lagna_si": chart.get("lagna_idx"),
         "birth_year": y,
+        "interpretation": text, "interp_title": title, "depth": depth,
     }
     # Redirect directly to the HTML view — it has a PDF download button built in
     return RedirectResponse(url=f"/view/{session_id}", status_code=303)
@@ -1053,11 +1065,26 @@ def varshaphala_age(request: Request, session_id: str, age: int,
         traceback.print_exc(file=sys.stderr)
         return JSONResponse({"error": "Berechnungsfehler — bitte prüfe die Eingaben oder versuche es später erneut."})
 
+def _norm_gender(g: str) -> str:
+    """'männlich'/'male'/'m' → 'male'; 'weiblich'/'frau'/'female'/'f'/'w' → 'female';
+    else '' (unknown / 'divers')."""
+    g = (g or "").strip().lower()
+    if g.startswith(("m",)):        # männlich / male / m
+        return "male"
+    if g.startswith(("w", "f")):    # weiblich / frau / female / f
+        return "female"
+    return ""
+
+
 @app.get("/compatibility/{session_id}")
 def compatibility(request: Request, session_id: str,
-                  date: str = "", time: str = "12:00", city: str = ""):
+                  date: str = "", time: str = "12:00", city: str = "",
+                  gender: str = ""):
     """Compute Ashtakūṭa + Mangal Dosha + house overlays between the report's
-    chart (person A, from disk cache) and a second person B (from query args)."""
+    chart (person A, from disk cache) and a second person B (from query args).
+    `gender` is person B's gender; person A's comes from the cached report. The
+    gender-directional kūṭas (Varna, Strī-Dīrgha, Rāśi) use the real genders when
+    both are known and distinct, otherwise fall back to A = groom."""
     from fastapi.responses import JSONResponse
     if not _is_known_session(session_id):
         return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
@@ -1093,8 +1120,16 @@ def compatibility(request: Request, session_id: str,
             return JSONResponse({"error": "Ort der zweiten Person nicht gefunden \u2014 bitte Stadt und Land pr\u00fcfen."})
         b = E.generate_chart(y2, mo2, d2, hh2, mm2, loc["lat"], loc["lon"],
                              loc["offset"], loc.get("label", city), "Person B")
-        comp = E.compute_compatibility(a, b)
+        # Determine which chart is the groom for the gender-directional kūṭas.
+        # Only override the A=groom default when both genders are known AND
+        # distinct (a hetero pairing); otherwise keep A=groom (same-sex/unknown).
+        ga = _norm_gender(params.get("gender"))
+        gb = _norm_gender(gender)
+        male = "b" if (ga == "female" and gb == "male") else "a"
+        comp = E.compute_compatibility(a, b, male=male)
         comp["person_b_label"] = loc.get("label", city)
+        comp["gender_resolved"] = bool(ga and gb and ga != gb)  # True = real genders used
+        comp["male_role"] = male                                 # 'a'=owner groom, 'b'=owner bride
         return JSONResponse(comp)
     except Exception as e:
         import traceback, sys
@@ -1181,9 +1216,41 @@ def download_pdf(session_id: str, variant: str = ""):
                              headers={"Content-Disposition": f'attachment; filename="{fn}"'})
 
 
+def _regenerate_view(session_id: str):
+    """Rebuild the interactive HTML view from cached birth params + interpretation
+    when the rendered HTML is gone but the chart params survived. No new LLM call.
+    Returns the HTML string, or None if not recoverable (partner/praśna or missing
+    fields). Standard single-person reports only — the common case."""
+    params = _CHART_CACHE.get(session_id)
+    if not params or not params.get("interpretation"):
+        return None
+    if params.get("prasna") or params.get("partner"):
+        return None            # complex state (2nd chart / praśna mode) — not rebuilt here
+    try:
+        chart = E.generate_chart(
+            int(params["y"]), int(params["mo"]), int(params["d"]),
+            int(params.get("hh", 12)), int(params.get("mm", 0)),
+            float(params["lat"]), float(params["lon"]), float(params.get("offset", 0.0)),
+            params.get("label", ""), params.get("name", ""), params.get("gender", ""))
+        if "/" in str(params.get("iana", "")):
+            chart["meta"]["tzname"] = params["iana"]
+        _ups = _frage_upsell_url(session_id) if params.get("depth") == "premium" else None
+        html = chart_html.build_html(
+            chart, interpretation=params["interpretation"],
+            interpretation_title=params.get("interp_title", "Persönliche Deutung"),
+            upsell_url=_ups)
+        _HTML_CACHE[session_id] = html      # re-cache so the next hit is cheap
+        return html
+    except Exception:
+        _traceback.print_exc(file=_sys.stderr)
+        return None
+
+
 @app.get("/view/{session_id}", response_class=HTMLResponse)
 def view_chart(session_id: str):
     html = _HTML_CACHE.get(session_id)
+    if not html:
+        html = _regenerate_view(session_id)   # best-effort rebuild from chart cache
     if not html:
         return HTMLResponse(msg_html("Ansicht abgelaufen",
                             "Die interaktive Ansicht ist nicht mehr verfügbar. "

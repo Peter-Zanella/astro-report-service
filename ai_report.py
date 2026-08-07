@@ -1620,20 +1620,24 @@ def generate_interpretation(
     prompt = build_prompt(facts, lang, depth)
 
     client = anthropic.Anthropic()
-    messages = [{"role": "user", "content": prompt}]
-    full_text = ""
+    base_messages = [{"role": "user", "content": prompt}]
 
-    def _create_with_retry(**kwargs):
-        """API-Call mit Backoff bei transienten Fehlern (Rate-Limit, Overloaded,
-        Verbindungsabbruch). Ein bezahlter Bericht darf nicht an einem
-        kurzzeitigen 429/5xx scheitern. Andere Fehler (z.B. 400) sofort werfen."""
+    # STREAMING statt eines nicht-gestreamten Calls: bei grossem max_tokens (bis
+    # 16000) lehnt das SDK einen nicht-gestreamten Request wegen der ~10-Minuten-
+    # Grenze ab bzw. lange Generierungen laufen in APITimeoutError — das ist die
+    # häufigste Ursache für "kein Output". messages.stream(...) + get_final_message()
+    # umgeht die Timeout-Grenze und liefert die vollständige Antwort zuverlässig.
+    def _stream_with_retry(**kwargs):
+        """messages.stream(...) mit Backoff bei transienten Fehlern (Rate-Limit,
+        Overloaded, Verbindungsabbruch). Andere Fehler (z.B. 400) sofort werfen."""
         import time as _time
         transient = (anthropic.RateLimitError, anthropic.InternalServerError,
                      anthropic.APIConnectionError, anthropic.APITimeoutError)
         delays = (3, 8, 20)          # Sekunden zwischen den Versuchen
         for i in range(len(delays) + 1):
             try:
-                return client.messages.create(**kwargs)
+                with client.messages.stream(**kwargs) as stream:
+                    return stream.get_final_message()
             except transient as e:
                 if i == len(delays):
                     raise
@@ -1641,30 +1645,62 @@ def generate_interpretation(
                       f"({type(e).__name__}), Retry in {delays[i]}s ...")
                 _time.sleep(delays[i])
 
-    for _attempt in range(3):  # allow up to 2 continuations
-        resp = _create_with_retry(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=messages,
-        )
-        chunk = "".join(
-            b.text for b in resp.content if getattr(b, "type", None) == "text"
-        )
-        full_text += chunk
+    _continue_msg = ("Bitte fahre nahtlos fort, genau dort wo du aufgehört hast. "
+                     "Wiederhole nichts." if lang == "de" else
+                     "Please continue seamlessly exactly where you left off. "
+                     "Do not repeat anything.")
 
-        if getattr(resp, "stop_reason", None) != "max_tokens":
-            break  # finished naturally
+    class _Refusal(Exception):
+        """Modell hat aus Sicherheitsgründen abgelehnt (stop_reason='refusal')."""
 
-        # Response was cut off — ask the model to continue seamlessly
-        messages.append({"role": "assistant", "content": chunk})
-        messages.append({"role": "user", "content":
-                         "Bitte fahre nahtlos fort, genau dort wo du aufgehört hast. "
-                         "Wiederhole nichts." if lang == "de" else
-                         "Please continue seamlessly exactly where you left off. "
-                         "Do not repeat anything."})
+    def _run_once() -> str:
+        """Eine vollständige Generierung inkl. bis zu 2 Fortsetzungen bei
+        Abschneiden (max_tokens). Wirft _Refusal bei Sicherheits-Ablehnung."""
+        msgs = list(base_messages)
+        text = ""
+        for _step in range(3):
+            resp = _stream_with_retry(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=msgs,
+            )
+            if getattr(resp, "stop_reason", None) == "refusal":
+                raise _Refusal()
+            chunk = "".join(
+                b.text for b in resp.content if getattr(b, "type", None) == "text"
+            )
+            text += chunk
+            # Natürliches Ende, oder es kam nichts mehr → Schluss.
+            if getattr(resp, "stop_reason", None) != "max_tokens" or not chunk:
+                break
+            # Abgeschnitten → nahtlos fortsetzen. Letzte Rolle bleibt 'user'
+            # (ein Assistant-Prefill würde auf Sonnet 4.6 mit 400 fehlschlagen).
+            msgs = msgs + [
+                {"role": "assistant", "content": chunk},
+                {"role": "user", "content": _continue_msg},
+            ]
+        return text.strip()
 
-    return full_text.strip()
+    # Ein bezahlter Bericht darf NIE leer zurückkommen. Eine Sicherheits-Ablehnung
+    # ist nicht wiederholbar (klare Fehlermeldung an den Aufrufer); eine unerwartet
+    # leere Antwort wird einmal erneut versucht, dann sauber als Fehler gemeldet —
+    # der Aufrufer zeigt dann eine Wiederholen-Seite statt einer leeren Deutung.
+    result = ""
+    for _try in range(2):
+        try:
+            result = _run_once()
+        except _Refusal:
+            raise RuntimeError(
+                "Die KI-Deutung wurde vom Sicherheitsfilter abgelehnt. Bitte prüfe "
+                "die Eingaben (Name, Ort, Fragen) und versuche es erneut.")
+        if result:
+            break
+    if not result:
+        raise RuntimeError(
+            "Die KI-Deutung kam leer zurück (keine Textausgabe des Modells). "
+            "Bitte versuche es in einem Moment erneut.")
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────

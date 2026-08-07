@@ -1174,6 +1174,15 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
       <input id="cp-city" type="text" placeholder="Zürich, Schweiz"
         style="padding:9px 12px;background:var(--bg2);color:var(--tx);border:1px solid var(--bd);border-radius:6px;font-family:inherit;font-size:.9rem;width:200px">
     </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:.78rem;color:var(--mu)">Geschlecht</label>
+      <select id="cp-gender"
+        style="padding:9px 12px;background:var(--bg2);color:var(--tx);border:1px solid var(--bd);border-radius:6px;font-family:inherit;font-size:.9rem;width:120px">
+        <option value="">—</option>
+        <option value="weiblich">weiblich</option>
+        <option value="männlich">männlich</option>
+      </select>
+    </div>
     <button onclick="runCompat()"
       style="padding:10px 20px;background:var(--ac);color:#0d0d1f;border:none;border-radius:6px;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer">
       Vergleichen
@@ -1284,7 +1293,7 @@ function loadVarshaphala(age){{
       if(sg) sg.innerHTML='<div class="pi2"><span class="pl2">Solar Return</span><span class="pv2">'+d.solar_return+'</span></div><div class="pi2"><span class="pl2">Jahreslagna</span><span class="pv2">'+d.lagna+' '+d.lagna_pos+'</span></div><div class="pi2"><span class="pl2">Muntha</span><span class="pv2">'+d.muntha+' ('+d.muntha_lord+')</span></div><div class="pi2"><span class="pl2">Varsha Pati</span><span class="pv2">'+d.varsha_pati+'</span></div>';
       var sp={{}};for(var i=0;i<12;i++) sp[i]=[];
       window._VP_DEG={{}};
-      _PL_ORDER.forEach(function(p){{if(d.planets[p]){{sp[d.planets[p].sign_idx||0].push(p);var ps=(d.planets[p].pos||'');var dm=ps.match(/(\d+)°/);if(dm)window._VP_DEG[p]=dm[1]+'°';}}}});
+      _PL_ORDER.forEach(function(p){{if(d.planets[p]){{sp[d.planets[p].sign_idx||0].push(p);var ps=(d.planets[p].pos||'');var dm=ps.match(/(\\d+)°/);if(dm)window._VP_DEG[p]=dm[1]+'°';}}}});
       var ttl='Varshaphala · '+age+' Jahre ('+d.year+')';
       document.getElementById('vp-chart-ni').innerHTML=_niSvg(d.lagna_si||0,sp,ttl);
       document.getElementById('vp-chart-si').innerHTML=_siSvg(d.lagna_si||0,sp,ttl);
@@ -1307,11 +1316,13 @@ function runCompat(){{
   var date=document.getElementById('cp-date').value.trim();
   var time=document.getElementById('cp-time').value.trim()||'12:00';
   var city=document.getElementById('cp-city').value.trim();
+  var gEl=document.getElementById('cp-gender');
+  var gender=gEl?gEl.value:'';
   var errEl=document.getElementById('cp-error'), loadEl=document.getElementById('cp-loading'), resEl=document.getElementById('cp-result');
   errEl.style.display='none'; resEl.innerHTML='';
   if(!date||!city){{errEl.textContent='Bitte Geburtsdatum und Ort der zweiten Person angeben.';errEl.style.display='block';return;}}
   loadEl.style.display='block';
-  var q='?date='+encodeURIComponent(date)+'&time='+encodeURIComponent(time)+'&city='+encodeURIComponent(city);
+  var q='?date='+encodeURIComponent(date)+'&time='+encodeURIComponent(time)+'&city='+encodeURIComponent(city)+'&gender='+encodeURIComponent(gender);
   fetch('/compatibility/'+sid+q)
     .then(function(r){{return r.json();}})
     .then(function(d){{
@@ -1365,7 +1376,10 @@ function renderCompat(d){{
   if(d.extra_milana){{
     var ex=d.extra_milana;
     h+='<p class="sh" style="margin-top:24px">Ergänzende Faktoren</p>';
-    h+='<div style="color:var(--mu);font-size:.8rem;margin-bottom:10px;font-style:italic">Person A = Mann, Person B = Frau (für Strī-Dīrgha & Rajju relevant). Diese ergänzenden Faktoren sind traditionelle Hinweise, keine endgültigen Urteile — einzelne Belastungen können durch stärkende Faktoren (Parihara) ausgeglichen werden.</div>';
+    var _roleNote = d.gender_resolved
+      ? ('Rollen nach Geschlecht: '+(d.male_role==='b'?'Person B = Mann, Person A = Frau':'Person A = Mann, Person B = Frau')+' (für Varna, Strī-Dīrgha & Rāśi relevant).')
+      : 'Ohne Geschlechtsangabe wird Person A = Mann, Person B = Frau angenommen (für Varna, Strī-Dīrgha & Rāśi relevant).';
+    h+='<div style="color:var(--mu);font-size:.8rem;margin-bottom:10px;font-style:italic">'+_roleNote+' Diese ergänzenden Faktoren sind traditionelle Hinweise, keine endgültigen Urteile — einzelne Belastungen können durch stärkende Faktoren (Parihara) ausgeglichen werden.</div>';
     function exRow(name, ok, verdict){{
       var col = ok ? '#7bc47b' : '#d88';
       var mark = ok ? '✓' : '⚠';
