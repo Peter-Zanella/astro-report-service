@@ -8,11 +8,12 @@ Flow:
   3. We verify the session is PAID, show a short birth-data form.
   4. On submit we calculate the chart, write the AI interpretation, build the PDF,
      and redirect to the interactive HTML view (PDF download button built in).
-     The customer can re-open /view and /download with their session link anytime.
+     The customer can re-open /view with their session link anytime; the report
+     has per-tab print / "save as PDF" built in (no server-side PDF).
   5. Each Stripe session can be generated once (idempotent, via SQLite), but the
      finished report stays downloadable from the web page.
 
-Deploy alongside:  astro_engine.py · ai_report.py · pdf_report.py
+Deploy alongside:  astro_engine.py · ai_report.py · chart_html.py
 Run:               uvicorn report_service:app --host 0.0.0.0 --port 8000
 Requirements:      fastapi  uvicorn[standard]  stripe  anthropic  reportlab
                    python-multipart  pyswisseph
@@ -39,12 +40,10 @@ from html import escape
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
-from io import BytesIO
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 import astro_engine as E
 import ai_report
-import pdf_report
 import chart_html
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
@@ -407,23 +406,15 @@ def msg_html(title: str, body: str, kind: str = "") -> str:
 
 def done_html(session_id: str) -> str:
     """Page shown when a session was already redeemed: link straight to the
-    finished report (interactive view + PDF download) instead of a dead end."""
+    finished interactive report (which has per-tab print/save built in)."""
     sid = escape(session_id, quote=True)
     has_html = _HTML_CACHE.get(session_id) is not None
-    has_pdf  = _PDF_CACHE.get(session_id)  is not None
     btn = (f'display:block;text-align:center;text-decoration:none;margin-top:14px;'
            f'padding:14px;border-radius:3px;font-weight:600;font-size:1rem')
     links = ""
     if has_html:
-        links += (f'<a href="/view/{sid}" style="{btn};background:{PAL["ink"]};'
-                  f'color:{PAL["paper"]}">Bericht ansehen</a>')
-    if has_pdf:
-        links += (f'<a href="/download/{sid}" style="{btn};background:{PAL["paper2"]};'
-                  f'color:{PAL["ink"]};border:1px solid {PAL["gold"]}">PDF herunterladen</a>')
-    if _PDF_CACHE.get(session_id + "-technik") is not None:
-        links += (f'<a href="/download/{sid}?variant=technik" style="{btn};'
-                  f'background:{PAL["paper2"]};color:{PAL["muted"]};'
-                  f'border:1px solid {PAL["line"]}">Technische Daten (PDF)</a>')
+        links += (f'<a href="/view/{sid}" style="{btn};background:{PAL["gold"]};'
+                  f'color:#0d0d1f">Bericht ansehen</a>')
     if links:
         body = ('<p class="ok">Dieser Bericht wurde bereits erstellt. '
                 'Du kannst ihn hier jederzeit wieder öffnen:</p>' + links +
@@ -541,22 +532,11 @@ def generate(request: Request,
         depth = info["depth"]
         text = ai_report.generate_interpretation(chart, lang=lang, depth=depth)
         title = "Persönliche Deutung" if lang == "de" else "Personal Reading"
-        # HTML-Ansicht ist das interaktive Kernprodukt — zuerst bauen, damit sie
-        # auch vorliegt, wenn danach der PDF-Renderer scheitert.
+        # HTML-Ansicht ist das Kernprodukt (mit eingebautem Druck/PDF-Speichern
+        # pro Tab). Kein separates PDF mehr.
         _ups = _frage_upsell_url(session_id) if info.get("depth") == "premium" else None
         html_view = chart_html.build_html(chart, interpretation=text,
                                           interpretation_title=title, upsell_url=_ups)
-        # PDF isoliert: ein Fehler hier verwirft die schon erzeugte Deutung/HTML
-        # NICHT — der Kunde bekommt die Ansicht, das PDF kann später neu erzeugt
-        # werden, statt dass der ganze (teure) Bericht verloren geht.
-        pdf = pdf_tech = None
-        try:
-            pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                       interpretation_title=title, variant="customer")
-            pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                            interpretation_title=title, variant="full")
-        except Exception:
-            _traceback.print_exc(file=_sys.stderr)
     except Exception as e:
         # un-claim so the customer can retry
         con = _db(); con.execute("DELETE FROM deliveries WHERE session_id=?", (session_id,))
@@ -567,13 +547,7 @@ def generate(request: Request,
                             "Bitte versuche es erneut oder melde dich bei uns — falls es erneut auftritt, kontaktiere uns bitte.",
                             "err"), 500)
 
-    fn = f"{info['label'].replace(' ', '_')}.pdf"
     _HTML_CACHE[session_id] = html_view
-    if pdf is not None:
-        _PDF_CACHE[session_id] = (pdf, fn)
-    if pdf_tech is not None:
-        _PDF_CACHE[session_id + "-technik"] = (
-            pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     # Cache raw birth params so Varshaphala can be recomputed for any age AND so
     # /view can rebuild the interactive view after a cache loss without a new LLM
     # call (interpretation + title + gender stored alongside the birth data).
@@ -585,7 +559,7 @@ def generate(request: Request,
         "natal_sun_sid": chart.get("lons", {}).get("Sun"),
         "natal_lagna_si": chart.get("lagna_idx"),
         "birth_year": y,
-        "interpretation": text, "interp_title": title, "depth": depth, "pdf_fn": fn,
+        "interpretation": text, "interp_title": title, "depth": depth,
     }
     # Redirect directly to the HTML view — it has a PDF download button built in
     return RedirectResponse(url=f"/view/{session_id}", status_code=303)
@@ -708,10 +682,6 @@ def partner_generate(request: Request,
         text = ai_report.generate_interpretation(chart, lang=lang, depth="partner")
         title = ("Partnerschafts-Deutung" if lang == "de"
                  else "Relationship Reading")
-        pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                   interpretation_title=title, variant="customer")
-        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                        interpretation_title=title, variant="full")
     except Exception as e:
         con = _db(); con.execute("DELETE FROM deliveries WHERE session_id=?", (session_id,))
         con.commit(); con.close()
@@ -721,12 +691,8 @@ def partner_generate(request: Request,
                             "Bitte versuche es erneut oder melde dich bei uns — falls es erneut auftritt, kontaktiere uns bitte.",
                             "err"), 500)
 
-    fn = f"{info['label'].replace(' ', '_')}.pdf"
     html_view = chart_html.build_html(chart, interpretation=text,
                                       interpretation_title=title)
-    _PDF_CACHE[session_id] = (pdf, fn)
-    _PDF_CACHE[session_id + "-technik"] = (
-        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
     # Rohdaten von Person A cachen — Varshaphala-/Kompatibilitäts-Tab im Viewer
     _CHART_CACHE[session_id] = {
@@ -967,10 +933,6 @@ def prasna_generate(
 
         text = ai_report.generate_interpretation(chart, lang=lang, depth="prasna")
         title = "Prāśna-Deutung" if lang == "de" else "Prāśna Reading"
-        pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                   interpretation_title=title, variant="customer")
-        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                        interpretation_title=title, variant="full")
         html_view = chart_html.build_html(chart, interpretation=text,
                                           interpretation_title=title,
                                           upsell_url=_prasna_upsell_url(session_id))
@@ -983,7 +945,6 @@ def prasna_generate(
         return HTMLResponse(msg_html("Fehler",
                             "Bitte erneut versuchen — falls es erneut auftritt, kontaktiere uns bitte.", "err"), 500)
 
-    fn = f"Prasna_{y}{mo:02d}{d:02d}.pdf"
     # Frage-Moment cachen, damit Zusatzfragen dasselbe Prāśna-Chart nutzen können
     _CHART_CACHE[session_id] = {
         "prasna": True, "y": y, "mo": mo, "d": d, "hh": hh, "mm": mm,
@@ -993,9 +954,6 @@ def prasna_generate(
         "birth_date": birth_date.strip(), "birth_time": birth_time.strip(),
         "birth_city": birth_city.strip(),
     }
-    _PDF_CACHE[session_id]  = (pdf, fn)
-    _PDF_CACHE[session_id + "-technik"] = (
-        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
     return RedirectResponse(url=f"/view/{session_id}", status_code=303)
 
@@ -1173,42 +1131,26 @@ if __name__ == "__main__":
 # ── caches persisted to disk (survive Render free-tier spin-down) ────────────
 _CACHE_DIR = Path(os.environ.get("CACHE_DIR", "report_cache"))
 _CACHE_DIR.mkdir(exist_ok=True)
-_PDF_CACHE:  dict = {}
 _HTML_CACHE: dict = {}
 
 
 class _DiskCache:
-    """Dict-like wrapper that also persists to disk (HTML as .html, PDF as .pdf+.name)."""
-    def __init__(self, kind: str):
-        self.kind = kind  # "html" or "pdf"
+    """Dict-like HTML cache persisted to disk (survives free-tier spin-down)."""
+    def __init__(self, kind: str = "html"):
+        self.kind = kind
 
     def __setitem__(self, sid: str, value):
         safe = "".join(c for c in sid if c.isalnum() or c in "-_")
-        if self.kind == "html":
-            (_CACHE_DIR / f"{safe}.html").write_text(value, encoding="utf-8")
-        else:
-            pdf, fn = value
-            (_CACHE_DIR / f"{safe}.pdf").write_bytes(pdf)
-            (_CACHE_DIR / f"{safe}.name").write_text(fn, encoding="utf-8")
+        (_CACHE_DIR / f"{safe}.html").write_text(value, encoding="utf-8")
 
     def get(self, sid: str, default=None):
         safe = "".join(c for c in sid if c.isalnum() or c in "-_")
         try:
-            if self.kind == "html":
-                return (_CACHE_DIR / f"{safe}.html").read_text(encoding="utf-8")
-            else:
-                pdf = (_CACHE_DIR / f"{safe}.pdf").read_bytes()
-                fn  = (_CACHE_DIR / f"{safe}.name").read_text(encoding="utf-8")
-                return (pdf, fn)
+            return (_CACHE_DIR / f"{safe}.html").read_text(encoding="utf-8")
         except FileNotFoundError:
             return default
 
-    def pop(self, sid: str, default=None):
-        # For PDFs we keep the file (allow repeat downloads); just return it
-        return self.get(sid, default)
 
-
-_PDF_CACHE  = _DiskCache("pdf")
 _HTML_CACHE = _DiskCache("html")
 class _JsonDiskCache:
     """Dict-like JSON cache persisted to disk (for Varshaphala birth params)."""
@@ -1230,54 +1172,8 @@ class _JsonDiskCache:
 _CHART_CACHE = _JsonDiskCache()   # session_id -> raw birth params for Varshaphala recompute
 
 
-def _regenerate_pdf(session_id: str, variant: str = ""):
-    """Rebuild a report PDF from cached birth params + interpretation when the
-    cached PDF file is gone but the chart cache survived (eviction, or a PDF build
-    that failed at generation time). No new LLM call. Standard single-person
-    reports only; returns (pdf_bytes, filename) or None."""
-    params = _CHART_CACHE.get(session_id)
-    if not params or not params.get("interpretation"):
-        return None
-    if params.get("prasna") or params.get("partner"):
-        return None
-    try:
-        chart = E.generate_chart(
-            int(params["y"]), int(params["mo"]), int(params["d"]),
-            int(params.get("hh", 12)), int(params.get("mm", 0)),
-            float(params["lat"]), float(params["lon"]), float(params.get("offset", 0.0)),
-            params.get("label", ""), params.get("name", ""), params.get("gender", ""))
-        if "/" in str(params.get("iana", "")):
-            chart["meta"]["tzname"] = params["iana"]
-        vk = "full" if variant == "technik" else "customer"
-        pdf = pdf_report.build_pdf(
-            chart, interpretation=params["interpretation"],
-            interpretation_title=params.get("interp_title", "Persönliche Deutung"),
-            variant=vk)
-        base = params.get("pdf_fn", "AstroVeda_Bericht.pdf")
-        fn = base.replace(".pdf", "_Technische_Daten.pdf") if variant == "technik" else base
-        key = session_id + "-technik" if variant == "technik" else session_id
-        _PDF_CACHE[key] = (pdf, fn)          # re-cache so the next hit is cheap
-        return (pdf, fn)
-    except Exception:
-        _traceback.print_exc(file=_sys.stderr)
-        return None
-
-
-@app.get("/download/{session_id}")
-def download_pdf(session_id: str, variant: str = ""):
-    key = session_id + "-technik" if variant == "technik" else session_id
-    entry = _PDF_CACHE.pop(key, None)
-    if not entry and variant == "technik":
-        entry = _PDF_CACHE.pop(session_id, None)   # older reports: only one PDF
-    if not entry:
-        entry = _regenerate_pdf(session_id, variant)   # rebuild if the file was evicted
-    if not entry:
-        return HTMLResponse(msg_html("Link abgelaufen",
-                            "Der Download-Link ist nicht mehr gültig. "
-                            "Bitte wende dich an uns.", "err"), 404)
-    pdf, fn = entry
-    return StreamingResponse(BytesIO(pdf), media_type="application/pdf",
-                             headers={"Content-Disposition": f'attachment; filename="{fn}"'})
+# PDF export removed — the interactive report has per-tab print / "save as PDF"
+# built in (chart_html), so there is no server-side PDF generation or /download.
 
 
 def _regenerate_view(session_id: str):
@@ -1398,10 +1294,6 @@ def report_frage_generate(request: Request,
         text = ai_report.generate_interpretation(chart, lang=lang, depth="frage")
         title = ("Zusatzfrage zu deinem Bericht" if lang == "de"
                  else "Follow-up question to your report")
-        pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                   interpretation_title=title, variant="customer")
-        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                        interpretation_title=title, variant="full")
         html_view = chart_html.build_html(chart, interpretation=text,
                                           interpretation_title=title,
                                           upsell_url=_frage_upsell_url(anchor))
@@ -1412,10 +1304,6 @@ def report_frage_generate(request: Request,
         traceback.print_exc(file=sys.stderr)
         return HTMLResponse(msg_html("Fehler bei der Berechnung",
                             "Ein interner Fehler ist aufgetreten — bitte erneut versuchen oder uns kontaktieren.", "err"), 500)
-    fn = "Zusatzfrage_zum_Bericht.pdf"
-    _PDF_CACHE[session_id] = (pdf, fn)
-    _PDF_CACHE[session_id + "-technik"] = (
-        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
     return RedirectResponse(url=f"/view/{session_id}",
                             status_code=303)
@@ -1509,10 +1397,6 @@ def prasna_followup_generate(request: Request,
                                                  depth="prasna_zusatz")
         title = ("Prāśna — Vertiefungsfrage" if lang == "de"
                  else "Prāśna — Follow-up question")
-        pdf = pdf_report.build_pdf(chart, interpretation=text,
-                                   interpretation_title=title, variant="customer")
-        pdf_tech = pdf_report.build_pdf(chart, interpretation=text,
-                                        interpretation_title=title, variant="full")
         html_view = chart_html.build_html(chart, interpretation=text,
                                           interpretation_title=title,
                                           upsell_url=_prasna_upsell_url(anchor))
@@ -1522,10 +1406,6 @@ def prasna_followup_generate(request: Request,
         _traceback.print_exc(file=_sys.stderr)
         return HTMLResponse(msg_html("Fehler bei der Berechnung",
                             "Ein interner Fehler ist aufgetreten — bitte erneut versuchen oder uns kontaktieren.", "err"), 500)
-    fn = "Prasna_Vertiefungsfrage.pdf"
-    _PDF_CACHE[session_id] = (pdf, fn)
-    _PDF_CACHE[session_id + "-technik"] = (
-        pdf_tech, fn.replace(".pdf", "_Technische_Daten.pdf"))
     _HTML_CACHE[session_id] = html_view
     return RedirectResponse(url=f"/view/{session_id}", status_code=303)
 

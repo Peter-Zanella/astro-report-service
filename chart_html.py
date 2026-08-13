@@ -946,6 +946,30 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   .cc{{padding:12px 8px}}
   h1{{font-size:1.7rem}}
 }}
+/* ── Druck: heller, tintensparender Ausdruck. Standard = nur der aktive Tab,
+      damit sich jedes Kapitel einzeln als PDF speichern/drucken lässt. Mit der
+      Klasse .printall werden alle statischen Kapitel gedruckt (je eigene Seite);
+      die live rechnenden Tabs (Kompatibilität, Varshaphala, Muhūrta) bleiben aus. */
+@media print{{
+  :root{{--bg:#fff;--bg2:#fff;--bg3:#f3f3f3;--ac:#8a6d1f;--ac2:#4a3f9f;--tx:#111;
+         --mu:#555;--bd:#c8c8c8;--gd:#2e7d4f;--rd:#b03030}}
+  body{{background:#fff !important;color:#111 !important}}
+  body::before{{display:none !important}}
+  .tabs,.dlb,.chart-toggle{{display:none !important}}
+  .pw{{max-width:100% !important;margin:0 !important;padding:0 !important}}
+  .hdr{{padding:0 0 12px !important;border-bottom:1px solid #ccc}}
+  .ow{{overflow:visible !important}}
+  .tp{{display:none !important}}
+  .tp.active{{display:block !important;padding:14px 0 !important}}
+  body.printall .tp{{display:block !important;break-before:page;page-break-before:always}}
+  body.printall #tab-reading{{break-before:auto;page-break-before:auto}}
+  body.printall #tab-varsha,body.printall #tab-muhurta,body.printall #tab-compat{{display:none !important}}
+  svg text{{fill:#111 !important}}
+  .cc,.mi,.dt th,.dbox{{background:#fff !important}}
+  .dt td,.dt th{{border-color:#ddd !important}}
+  a[href]::after{{content:'' !important}}
+  @page{{margin:1.4cm}}
+}}
 </style></head>
 <body><div class="pw">
 
@@ -963,9 +987,8 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 </div>
 
 <div class="dlb">
-  <a class="btn btn-p" id="pdf-btn" href="#">⬇ PDF herunterladen</a>
-  <a class="btn btn-s" id="pdf-tech-btn" href="#">⬇ Technische Daten (PDF)</a>
-  <a class="btn btn-s" href="javascript:window.print()">🖨 Drucken</a>
+  <a class="btn btn-p" href="javascript:printTab()">🖨 Diesen Tab drucken / als PDF speichern</a>
+  <a class="btn btn-s" href="javascript:printAll()">🖨 Alle Kapitel drucken</a>
 </div>
 {upsell_html}
 
@@ -1212,6 +1235,18 @@ function showTab(id,btn){{
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
 }}
+// Nur den aktiven Tab drucken (bzw. als PDF speichern) — das Druck-Stylesheet
+// blendet Menü/Buttons aus und stellt auf hellen Hintergrund um.
+function printTab(){{window.print();}}
+// Alle statischen Kapitel drucken (je eigene Seite); danach Normalansicht.
+function printAll(){{
+  document.body.classList.add('printall');
+  var restore=function(){{document.body.classList.remove('printall');
+    window.removeEventListener('afterprint',restore);}};
+  window.addEventListener('afterprint',restore);
+  window.print();
+  setTimeout(restore,1500);   // Fallback, falls afterprint nicht feuert
+}}
 function togglePada(id){{
   var el=document.getElementById(id);
   if(el) el.style.display = (el.style.display==='none' ? '' : 'none');
@@ -1238,12 +1273,6 @@ function setStyle(btn,style,wrap){{
   btn.classList.add('active');
   wrap.querySelector('.cv.'+style).style.display='';
 }}
-// Set PDF button href from URL param
-(function(){{
-  var sid=new URLSearchParams(location.search).get('session_id')||location.pathname.split('/').pop();
-  if(sid){{ var b=document.getElementById('pdf-btn'); if(b) b.href='/download/'+sid; var t=document.getElementById('pdf-tech-btn'); if(t) t.href='/download/'+sid+'?variant=technik'; }}
-}})();
-
 // ── Varshaphala dynamic loader ──────────────────────────────────────────────
 var _SIGNS_ABR=['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
 var _SIGN_ICO=['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
