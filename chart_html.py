@@ -244,6 +244,17 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
                 _vp_mo = _mi; break
         _bd_match = _re_vp.search(r"\b(\d{1,2})\s", str(m.get("birth","")))
         _vp_bd = int(_bd_match.group(1)) if _bd_match else 1
+    # Person-A params embedded so the Compatibility tab survives a server
+    # spin-down (disk/cache wiped): the tab posts these to /compatibility, which
+    # rebuilds A from them when its own cache is gone.
+    import json as _json_cmp
+    _rawm = chart.get("meta", {})
+    _cmp_a_json = _json_cmp.dumps({
+        "by": _vp_by, "mo": _vp_mo, "d": _vp_bd,
+        "hh": _rawm.get("birth_h", 12), "mm": _rawm.get("birth_min", 0),
+        "lat": _vp_lat, "lon": _vp_lon, "off": _rawm.get("offset", 0),
+        "name": _rawm.get("name", ""), "gender": _rawm.get("gender", ""),
+    })
     vp_pls = vp.get("planets",{})
     sp_vp  = _build_sign_planets(vp_pls) if vp_pls else sp_rasi
 
@@ -1278,6 +1289,7 @@ function setVpStyle(s){{
 }}
 
 var _VP_BIRTH={{sun:{_vp_sun},lagna:{_vp_lagna},mo:{_vp_mo},d:{_vp_bd},lat:{_vp_lat},lon:{_vp_lon},by:{_vp_by}}};
+var _CMP_A={_cmp_a_json};
 function loadVarshaphala(age){{
   var sid=new URLSearchParams(location.search).get('session_id')||location.pathname.split('/').pop();
   if(!sid||sid==='view') sid='embedded';
@@ -1322,7 +1334,10 @@ function runCompat(){{
   errEl.style.display='none'; resEl.innerHTML='';
   if(!date||!city){{errEl.textContent='Bitte Geburtsdatum und Ort der zweiten Person angeben.';errEl.style.display='block';return;}}
   loadEl.style.display='block';
-  var q='?date='+encodeURIComponent(date)+'&time='+encodeURIComponent(time)+'&city='+encodeURIComponent(city)+'&gender='+encodeURIComponent(gender);
+  var q='?date='+encodeURIComponent(date)+'&time='+encodeURIComponent(time)+'&city='+encodeURIComponent(city)+'&gender='+encodeURIComponent(gender)
+    +'&a_by='+_CMP_A.by+'&a_mo='+_CMP_A.mo+'&a_d='+_CMP_A.d+'&a_hh='+_CMP_A.hh+'&a_mm='+_CMP_A.mm
+    +'&a_lat='+_CMP_A.lat+'&a_lon='+_CMP_A.lon+'&a_off='+_CMP_A.off
+    +'&a_name='+encodeURIComponent(_CMP_A.name)+'&a_gender='+encodeURIComponent(_CMP_A.gender);
   fetch('/compatibility/'+sid+q)
     .then(function(r){{return r.json();}})
     .then(function(d){{

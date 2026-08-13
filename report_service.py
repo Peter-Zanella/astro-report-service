@@ -326,7 +326,15 @@ button:hover{{background:#d4b560}}
 .muted{{color:{PAL['muted']};font-size:.85rem;margin-top:14px}}
 .ok{{color:#4caf7d}} .err{{color:#e05c5c}}
 .dot{{color:{PAL['gold']}}}
-</style></head><body><div class="card">{inner}</div></body></html>"""
+</style></head><body><div class="card">{inner}</div>
+<script>
+// Date mask: user types digits only (numeric keypad on mobile); dots are
+// inserted automatically → TT.MM.JJJJ. Lets the birth YEAR be typed directly,
+// unlike a native date picker which forces spinning through the calendar.
+function fmtDate(el){{var v=el.value.replace(/[^0-9]/g,'').slice(0,8);
+el.value = v.length>4 ? v.slice(0,2)+'.'+v.slice(2,4)+'.'+v.slice(4)
+         : v.length>2 ? v.slice(0,2)+'.'+v.slice(2) : v;}}
+</script></body></html>"""
 
 
 def form_html(session_id: str, info: dict) -> str:
@@ -367,7 +375,8 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 <label>Name</label><input name="name" value="{escape(info.get('name',''))}" required>
 <div class="row">
   <div><label>Geburtsdatum</label>
-    <input type="date" name="date" min="1900-01-01" max="2035-12-31" required></div>
+    <input name="date" inputmode="numeric" maxlength="10" oninput="fmtDate(this)"
+      placeholder="TT.MM.JJJJ · z.B. 24.08.1957" autocomplete="off" required></div>
   <div><label>Geburtszeit</label><input type="time" name="time" value="12:00"></div>
 </div>
 <label>Geburtsort (Stadt, Land)</label>
@@ -576,7 +585,7 @@ def generate(request: Request,
         "natal_sun_sid": chart.get("lons", {}).get("Sun"),
         "natal_lagna_si": chart.get("lagna_idx"),
         "birth_year": y,
-        "interpretation": text, "interp_title": title, "depth": depth,
+        "interpretation": text, "interp_title": title, "depth": depth, "pdf_fn": fn,
     }
     # Redirect directly to the HTML view — it has a PDF download button built in
     return RedirectResponse(url=f"/view/{session_id}", status_code=303)
@@ -605,7 +614,8 @@ def _person_fields(prefix: str, title: str) -> str:
 <label>Name</label><input name="{prefix}_name" required>
 <div class="row">
   <div><label>Geburtsdatum</label>
-    <input type="date" name="{prefix}_date" min="1900-01-01" max="2035-12-31" required></div>
+    <input name="{prefix}_date" inputmode="numeric" maxlength="10" oninput="fmtDate(this)"
+      placeholder="TT.MM.JJJJ · z.B. 24.08.1957" autocomplete="off" required></div>
   <div><label>Geburtszeit</label><input type="time" name="{prefix}_time" value="12:00"></div>
 </div>
 <label>Geburtsort (Stadt, Land)</label>
@@ -847,7 +857,8 @@ enthält die Antwort. Stelle deine Frage aufrichtig — der Moment zählt.</p>
     ausfüllen — oder beide leer lassen.</p>
   <div class="row">
     <div><label>Geburtsdatum</label>
-      <input type="date" name="birth_date" min="1900-01-01" max="2035-12-31"></div>
+      <input name="birth_date" inputmode="numeric" maxlength="10" oninput="fmtDate(this)"
+        placeholder="TT.MM.JJJJ · z.B. 24.08.1957" autocomplete="off"></div>
     <div><label>Geburtszeit</label>
       <input type="time" name="birth_time"></div>
   </div>
@@ -998,17 +1009,22 @@ def varshaphala_age(request: Request, session_id: str, age: int,
                     sun: float = None, lagna: int = None,
                     mo: int = None, d: int = None,
                     lat: float = None, lon: float = None, by: int = None):
-    """Recompute Varshaphala for a given age.
-    Birth params come from query args (survive spin-down) or fall back to disk cache."""
-    # Access control: only sessions we issued a report for may drive the engine —
-    # the query-param path previously allowed fully anonymous computation.
-    if not _is_known_session(session_id):
-        return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
+    """Recompute Varshaphala for a given age. Birth params come from query args
+    (embedded in the page, so they survive a spin-down) or fall back to the disk
+    cache. After a spin-down wipes the session store, the paid session is
+    re-verified via Stripe so the tab keeps working without a persistent disk."""
     if not _rate_ok(_client_ip(request), limit=60, window=60.0):
         return JSONResponse({"error": "Zu viele Anfragen — bitte kurz warten."},
                             status_code=429)
+    have_q = all(v is not None for v in (sun, lagna, mo, d, lat, lon, by))
+    # Access control: a session we know, OR — cache gone after a spin-down — a
+    # live paid Stripe session (never anonymous compute).
+    if not _is_known_session(session_id):
+        authed = _is_test_session(session_id) or (have_q and get_paid_session(session_id)[0])
+        if not authed:
+            return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
     # Prefer explicit query params (robust); fall back to disk cache
-    if all(v is not None for v in (sun, lagna, mo, d, lat, lon, by)):
+    if have_q:
         params = {"natal_sun_sid": sun, "natal_lagna_si": lagna,
                   "mo": mo, "d": d, "lat": lat, "lon": lon, "birth_year": by}
     else:
@@ -1069,29 +1085,52 @@ def _norm_gender(g: str) -> str:
 @app.get("/compatibility/{session_id}")
 def compatibility(request: Request, session_id: str,
                   date: str = "", time: str = "12:00", city: str = "",
-                  gender: str = ""):
+                  gender: str = "",
+                  a_by: int = None, a_mo: int = None, a_d: int = None,
+                  a_hh: int = None, a_mm: int = None,
+                  a_lat: float = None, a_lon: float = None, a_off: float = None,
+                  a_name: str = "", a_gender: str = ""):
     """Compute Ashtakūṭa + Mangal Dosha + house overlays between the report's
-    chart (person A, from disk cache) and a second person B (from query args).
-    `gender` is person B's gender; person A's comes from the cached report. The
+    chart (person A) and a second person B (from query args). `gender` is person
+    B's gender; person A's is from the cached report or the a_* fallback. The
     gender-directional kūṭas (Varna, Strī-Dīrgha, Rāśi) use the real genders when
-    both are known and distinct, otherwise fall back to A = groom."""
+    both are known and distinct, otherwise A = groom.
+
+    Person A is rebuilt from the disk cache when present; after a server
+    spin-down wipes it, the a_* params embedded in the report page are used —
+    the paid session is then re-verified via Stripe, so compatibility keeps
+    working across restarts without a persistent disk."""
     from fastapi.responses import JSONResponse
-    if not _is_known_session(session_id):
-        return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
     if not _rate_ok(_client_ip(request), limit=30, window=60.0):
         return JSONResponse({"error": "Zu viele Anfragen — bitte kurz warten."},
                             status_code=429)
     try:
         params = _CHART_CACHE.get(session_id)
-        if not params:
+        have_fallback = all(v is not None for v in
+                            (a_by, a_mo, a_d, a_hh, a_mm, a_lat, a_lon, a_off))
+        # Authorisation: a session we already know, OR \u2014 when the cache is gone
+        # after a spin-down \u2014 a live paid Stripe session (survives disk loss).
+        if not _is_known_session(session_id):
+            authed = _is_test_session(session_id)
+            if not authed and have_fallback:
+                authed = get_paid_session(session_id)[0]
+            if not authed:
+                return JSONResponse({"error": "Kein Zugriff."}, status_code=403)
+        # Person A: from the cache when present, else the page's a_* params.
+        if params:
+            a = E.generate_chart(
+                int(params["birth_year"]), int(params["mo"]), int(params["d"]),
+                int(params.get("hh", 12)), int(params.get("mm", 0)),
+                float(params["lat"]), float(params["lon"]), float(params.get("offset", 0.0)),
+                params.get("label", ""), params.get("name", "Person A"))
+            a_gender_eff = params.get("gender", "")
+        elif have_fallback:
+            a = E.generate_chart(
+                int(a_by), int(a_mo), int(a_d), int(a_hh), int(a_mm),
+                float(a_lat), float(a_lon), float(a_off), "", a_name or "Person A")
+            a_gender_eff = a_gender
+        else:
             return JSONResponse({"error": "Sitzung abgelaufen \u2014 bitte Bericht neu erstellen."})
-        # Rebuild person A's chart from cached raw birth params
-        a = E.generate_chart(
-            int(params["birth_year"]), int(params["mo"]), int(params["d"]),
-            int(params.get("hh", 12)), int(params.get("mm", 0)),
-            float(params["lat"]), float(params["lon"]), float(params.get("offset", 0.0)),
-            params.get("label", ""), params.get("name", "Person A"),
-        )
         # Parse person B's date (accept DD.MM.YYYY / YYYY-MM-DD / DD-MM-YYYY)
         date = (date or "").strip()
         if not date or not city.strip():
@@ -1113,7 +1152,7 @@ def compatibility(request: Request, session_id: str,
         # Determine which chart is the groom for the gender-directional kūṭas.
         # Only override the A=groom default when both genders are known AND
         # distinct (a hetero pairing); otherwise keep A=groom (same-sex/unknown).
-        ga = _norm_gender(params.get("gender"))
+        ga = _norm_gender(a_gender_eff)
         gb = _norm_gender(gender)
         male = "b" if (ga == "female" and gb == "male") else "a"
         comp = E.compute_compatibility(a, b, male=male)
@@ -1191,12 +1230,47 @@ class _JsonDiskCache:
 _CHART_CACHE = _JsonDiskCache()   # session_id -> raw birth params for Varshaphala recompute
 
 
+def _regenerate_pdf(session_id: str, variant: str = ""):
+    """Rebuild a report PDF from cached birth params + interpretation when the
+    cached PDF file is gone but the chart cache survived (eviction, or a PDF build
+    that failed at generation time). No new LLM call. Standard single-person
+    reports only; returns (pdf_bytes, filename) or None."""
+    params = _CHART_CACHE.get(session_id)
+    if not params or not params.get("interpretation"):
+        return None
+    if params.get("prasna") or params.get("partner"):
+        return None
+    try:
+        chart = E.generate_chart(
+            int(params["y"]), int(params["mo"]), int(params["d"]),
+            int(params.get("hh", 12)), int(params.get("mm", 0)),
+            float(params["lat"]), float(params["lon"]), float(params.get("offset", 0.0)),
+            params.get("label", ""), params.get("name", ""), params.get("gender", ""))
+        if "/" in str(params.get("iana", "")):
+            chart["meta"]["tzname"] = params["iana"]
+        vk = "full" if variant == "technik" else "customer"
+        pdf = pdf_report.build_pdf(
+            chart, interpretation=params["interpretation"],
+            interpretation_title=params.get("interp_title", "Persönliche Deutung"),
+            variant=vk)
+        base = params.get("pdf_fn", "AstroVeda_Bericht.pdf")
+        fn = base.replace(".pdf", "_Technische_Daten.pdf") if variant == "technik" else base
+        key = session_id + "-technik" if variant == "technik" else session_id
+        _PDF_CACHE[key] = (pdf, fn)          # re-cache so the next hit is cheap
+        return (pdf, fn)
+    except Exception:
+        _traceback.print_exc(file=_sys.stderr)
+        return None
+
+
 @app.get("/download/{session_id}")
 def download_pdf(session_id: str, variant: str = ""):
     key = session_id + "-technik" if variant == "technik" else session_id
     entry = _PDF_CACHE.pop(key, None)
     if not entry and variant == "technik":
         entry = _PDF_CACHE.pop(session_id, None)   # older reports: only one PDF
+    if not entry:
+        entry = _regenerate_pdf(session_id, variant)   # rebuild if the file was evicted
     if not entry:
         return HTMLResponse(msg_html("Link abgelaufen",
                             "Der Download-Link ist nicht mehr gültig. "

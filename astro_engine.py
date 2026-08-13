@@ -2314,6 +2314,7 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
             "birth_h": hour, "birth_min": minute,
             "ut":       ut_dt.strftime("%d %B %Y  %H:%M UTC"),
             "tz":       f"UTC{sgn}{ah:02d}:{am:02d}",
+            "offset":   tz_offset,   # numeric hours — for client-side compat/varshaphala fallback
             "location": location, "lat":lat, "lon":lon,
             "jd":       round(jd,5), "ayan": round(ayan,4), "engine": engine,
         },
