@@ -276,6 +276,28 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
 
     vargottama_planets = []   # planets with same sign in D1 and D9
 
+    # Für die Rāśi-Würdigung (Punkte 2, 5, 7 der klassischen Reihenfolge):
+    # Zeichenherr samt seinem Stand, regierte Häuser und Konjunktionen gehören
+    # an den Planeten selbst. Vorher lagen sie über 'house_lords', 'occupants'
+    # und 'lagna.lord_details' verstreut — pro Planet war das ein Join über
+    # mehrere Blöcke, den das Modell zuverlässig nicht gemacht hat.
+    try:
+        from astro_engine import SIGN_LORDS as _SL_P
+    except Exception:
+        _SL_P = {}
+    _rulerships = chart.get("lordships", {}) or {}
+    _conj_all = chart.get("conjunctions", {}) or {}
+
+    def _conj_list(planet: str):
+        """['Ketu (2.3° — SEHR ENG)', …] aus dem Engine-Produkt, nie selbst gemessen."""
+        out = []
+        for _e in _conj_all.get(planet, []):
+            _orb, _wth = _e.get("orb"), _e.get("with")
+            if _orb is None or _wth is None:
+                continue
+            out.append(f"{_wth} ({_orb:.1f}°{' — SEHR ENG' if _orb < 3.0 else ''})")
+        return out
+
     for p, d in pls.items():
         if p == "Ascendant": continue
         p_d9 = d9_full.get(p, {})
@@ -295,6 +317,15 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
             "d9_sign":   p_d9_sign,            # from astro_engine — authoritative
             "d9_dignity": p_d9.get("dignity"), # from astro_engine — authoritative
             "vargottama": is_vargottama,       # from astro_engine — authoritative
+            # Zeichenherr (Dispositor) und wo er steht — Punkt 2 der Würdigung
+            "sign_lord":       _SL_P.get(d.get("sign")),
+            "sign_lord_house": pls.get(_SL_P.get(d.get("sign"), ""), {}).get("house"),
+            # Welche Häuser regiert DIESER Planet für dieses Lagna — Punkt 5
+            "rules_houses":    _rulerships.get(p, []),
+            # Konjunktionen mit Orb — Punkt 7
+            "conjunctions_with_orb": _conj_list(p),
+            # Verbrennung, Graha Yuddha, Papakartari … — Punkt 9
+            "afflictions":     (chart.get("afflictions") or {}).get(p, []),
         }
         # Haus vom Mond (Chandra Lagna) — VORBERECHNET, damit das Modell nie
         # selbst Tierkreis-Abstände zählen muss (Fundstelle: Zählfehler in der
@@ -748,6 +779,7 @@ _SECTIONS = {
         ],
         "premium": [
             "Aszendent & Grundwesen (D1 vom Lagna)",
+            "Die neun Grahas im Rāśi — Zeichen, Würde, Haus",
             "Mond, Nakshatra & Gefühlswelt (D1 vom Mond)",
             "Pañcāṅga der Geburt — Die fünf Zeitqualitäten",
             "Die Hausherren (Bhāveśa) — Wohin die Herren der Häuser gehen",
@@ -811,6 +843,7 @@ _SECTIONS = {
         ],
         "premium": [
             "Ascendant & core nature (D1 from Lagna)",
+            "The nine grahas in the Rāśi — sign, dignity, house",
             "Moon, nakshatra & emotional world (D1 from Moon)",
             "Pañcāṅga of Birth — The five time qualities",
             "The House Lords (Bhāveśa) — Where the lords of the houses go",
@@ -879,12 +912,47 @@ _SECTION_GUIDES = {
             "alle Planeten im 1. Haus und deren Affliktionen. Berücksichtige "
             "Aspekte auf das Lagna. Nutze den D9-Lagna-Herrn zur Vertiefung. "
             "Vergleiche Lagna-Herrn im Natal vs. D9. "
-            "WICHTIG: Gehe im Bericht systematisch jeden Planeten durch und deute "
-            "seine konkrete Wirkung in SEINEM Zeichen UND SEINEM Haus — z.B. "
-            "'Rahu im 12. Haus', 'Ketu im 6. Haus', 'Saturn im Steinbock im 3. Haus'. "
-            "Verteile diese Planeten-Deutungen sinnvoll auf die passenden Abschnitte "
-            "(Karriere-Planeten im D10-Abschnitt, emotionale im Mond-Abschnitt etc.), "
-            "aber lasse KEINEN Planeten unerwähnt.",
+            "Beschränke dich hier auf Lagna, Lagneśa und die Besetzer des "
+            "1. Hauses. Die planetenweise Würdigung aller neun Grahas gehört "
+            "in das unmittelbar folgende Kapitel — greife ihr nicht vor und "
+            "wiederhole sie später nicht.",
+        "Die neun Grahas im Rāśi — Zeichen, Würde, Haus":
+            "KERNKAPITEL der Rāśi-Deutung — hier entscheidet sich, ob die "
+            "Planetenstellungen wirklich gewürdigt werden. Gehe ALLE neun "
+            "Grahas EINZELN durch — Sonne, Mond, Mars, Merkur, Jupiter, Venus, "
+            "Saturn, Rāhu, Ketu — jeder mit eigener ### Zwischenüberschrift "
+            "(z.B. '### Saturn im Steinbock, 3. Haus'). Kein Graha darf fehlen, "
+            "keiner wird bloss aufgezählt. Würdige jeden Graha in GENAU dieser "
+            "klassischen Reihenfolge, ausschliesslich aus 'planets[<Graha>]' "
+            "und den dort verlinkten Feldern: "
+            "(1) naisargika kārakatva — wofür der Graha von Natur aus steht; "
+            "(2) Zeichen und dessen Herr ('sign', 'sign_lord', "
+            "'sign_lord_house') — wo der Dispositor steht, färbt den Graha mit; "
+            "(3) Würde ausschliesslich aus 'dignity' (Uccha, Nīca, eigenes "
+            "Zeichen, Freund, Feind) — NIEMALS selbst bestimmen; "
+            "(4) Hausposition aus 'house'; "
+            "(5) Herrschaften aus 'rules_houses' — welche Häuser dieser Graha "
+            "für DIESES Lagna regiert und was er von dort in sein Standhaus "
+            "trägt (funktionaler Wohltäter/Übeltäter, Regel 14); "
+            "(6) Aspekte auf ihn und von ihm aus 'aspects'; "
+            "(7) Konjunktionen aus 'conjunctions_with_orb' — ein Orb unter 3° "
+            "wiegt schwer; "
+            "(8) Nakshatra und dessen Herr ('nakshatra', 'pada', 'nak_lord'); "
+            "(9) Verbrennung, Graha Yuddha, Retrogradität und Weiteres aus "
+            "'afflictions' und 'retrograde'; "
+            "(10) Navāṃśa aus 'd9_sign', 'd9_dignity', 'vargottama' — bestätigt "
+            "oder widerruft der D9 den Rāśi-Befund? "
+            "(11) Stärke aus 'shadbala[<Graha>]' (rupa, strong), sofern "
+            "vorhanden; "
+            "(12) ob der Graha in 'vimshottari_current' gerade als Mahā- oder "
+            "Antardaśā-Herr läuft — dann ist sein Thema JETZT wach. "
+            "Führe diese Punkte pro Graha zu EINEM zusammenhängenden Urteil "
+            "(4–8 Sätze). Nenne die Nummern nicht und arbeite die Liste nicht "
+            "sichtbar ab — es soll klingen wie ein Astrologe, der den Planeten "
+            "betrachtet, nicht wie ein ausgefülltes Formular. Widersprüche "
+            "(z.B. erhöht, aber verbrannt und schwach) ehrlich benennen statt "
+            "glattbügeln. Den Mond hier kurz halten, seine Gefühlsdeutung "
+            "folgt im nächsten Kapitel.",
         "Mond, Nakshatra & Gefühlswelt (D1 vom Mond)":
             "Behandle den Mond als Chandra Lagna — analog zur Lagna-Deutung. "
             "Die Häuser vom Mond stehen FERTIG BERECHNET im Feld "
@@ -1202,11 +1270,47 @@ _SECTION_GUIDES = {
             "all planets in the 1st house and their afflictions. Consider "
             "aspects on the Lagna. Use D9 Lagna lord to deepen. "
             "Compare natal Lagna lord vs. D9. "
-            "IMPORTANT: Systematically address every planet's concrete effect in "
-            "ITS sign AND ITS house — e.g. 'Rahu in the 12th', 'Ketu in the 6th', "
-            "'Saturn in Capricorn in the 3rd'. Distribute these planet readings "
-            "across the appropriate sections (career planets in the D10 section, "
-            "emotional ones in the Moon section etc.), but leave NO planet unmentioned.",
+            "Confine yourself here to the Lagna, the Lagneśa and the occupants "
+            "of the 1st house. The planet-by-planet appraisal of all nine "
+            "grahas belongs to the chapter that follows immediately — do not "
+            "anticipate it here and do not repeat it later.",
+        "The nine grahas in the Rāśi — sign, dignity, house":
+            "CORE CHAPTER of the Rāśi reading — this is where the planetary "
+            "placements are either properly honoured or lost. Work through ALL "
+            "nine grahas INDIVIDUALLY — Sun, Moon, Mars, Mercury, Jupiter, "
+            "Venus, Saturn, Rāhu, Ketu — each with its own ### subheading "
+            "(e.g. '### Saturn in Capricorn, 3rd house'). No graha may be "
+            "missing, none may be merely listed. Appraise each graha in EXACTLY "
+            "this classical order, drawing only on 'planets[<graha>]' and the "
+            "fields referenced there: "
+            "(1) naisargika kārakatva — what the graha naturally signifies; "
+            "(2) sign and its lord ('sign', 'sign_lord', 'sign_lord_house') — "
+            "where the dispositor sits colours the graha; "
+            "(3) dignity from 'dignity' only (exalted, debilitated, own sign, "
+            "friend, enemy) — NEVER determine it yourself; "
+            "(4) house position from 'house'; "
+            "(5) rulerships from 'rules_houses' — which houses this graha rules "
+            "for THIS Lagna, and what it carries from there into the house it "
+            "occupies (functional benefic/malefic, rule 14); "
+            "(6) aspects to and from it, from 'aspects'; "
+            "(7) conjunctions from 'conjunctions_with_orb' — an orb under 3° "
+            "weighs heavily; "
+            "(8) nakshatra and its lord ('nakshatra', 'pada', 'nak_lord'); "
+            "(9) combustion, graha yuddha, retrogression and more from "
+            "'afflictions' and 'retrograde'; "
+            "(10) Navāṃśa from 'd9_sign', 'd9_dignity', 'vargottama' — does the "
+            "D9 confirm or overturn the Rāśi verdict? "
+            "(11) strength from 'shadbala[<graha>]' (rupa, strong), where "
+            "available; "
+            "(12) whether the graha is currently running as mahā or antardaśā "
+            "lord in 'vimshottari_current' — then its theme is awake NOW. "
+            "Fuse these points into ONE coherent judgement per graha (4–8 "
+            "sentences). Do not name the numbers and do not visibly tick off "
+            "the list — it must read like an astrologer looking at the planet, "
+            "not like a completed form. Name contradictions honestly (e.g. "
+            "exalted yet combust and weak) instead of smoothing them over. "
+            "Keep the Moon brief here; its emotional reading follows in the "
+            "next chapter.",
         "Moon, nakshatra & emotional world (D1 from Moon)":
             "Treat the Moon as Chandra Lagna — analogous to the Ascendant reading. "
             "The houses from the Moon are PRE-COMPUTED in each planet's "
