@@ -753,7 +753,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <h2>KI-Deutung: Prinzipien & Grenzen</h2>
 
   <h3>Prinzip: Fakten zuerst, Interpretation danach</h3>
-  <p>Das Horoskop wird zuerst exakt berechnet; die Fakten gehen als strukturiertes JSON an das Sprachmodell, das <strong>ausschliesslich sie</strong> interpretiert. Jede Aussage im Bericht ist auf einen berechneten Wert zurückführbar.</p>
+  <p>Das Horoskop wird zuerst exakt berechnet; die fertigen Werte werden der KI dann in strukturierter Form übergeben, und sie deutet <strong>ausschliesslich diese</strong>. Jede Aussage im Bericht ist auf einen berechneten Wert zurückführbar.</p>
 
   <h3>Autoritativ übergebene Rechenwerte</h3>
   <p>Fertig berechnet geliefert, von der KI nie selbst bestimmt:</p>
@@ -767,13 +767,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   </ul>
 
   <h3>Deutungsreihenfolge & vollständige Planeten-Würdigung</h3>
-  <p>Der Prompt folgt der klassischen Reihenfolge: D1 vom Lagna → Würdigung der neun Grahas → D1 vom Mond → Hausherren → Stärken → Affliktionen → Aspekte → Divisional → Timing. Ein <strong>eigenes Kapitel würdigt jeden Graha einzeln</strong>, in fester Reihenfolge: natürliche Signifikanz, Zeichen und Zeichenherr, Würde, Haus, Herrschaften, Aspekte, Konjunktionen, Nakshatra-Herr, Affliktionen, D9, Shad Bala, laufende Daśā. Kein Planet bleibt unerwähnt. Die zwölf Kriterien ergeben ein zusammenhängendes Urteil statt einer abgehakten Liste; Widersprüche — erhöht, aber verbrannt und schwach — werden benannt statt geglättet.</p>
+  <p>Die Deutung folgt der klassischen Reihenfolge: D1 vom Lagna → Würdigung der neun Grahas → D1 vom Mond → Hausherren → Stärken → Affliktionen → Aspekte → Divisional → Timing. Ein <strong>eigenes Kapitel würdigt jeden Graha einzeln</strong>, in fester Reihenfolge: natürliche Signifikanz, Zeichen und Zeichenherr, Würde, Haus, Herrschaften, Aspekte, Konjunktionen, Nakshatra-Herr, Affliktionen, D9, Shad Bala, laufende Daśā. Kein Planet bleibt unerwähnt. Die zwölf Kriterien ergeben ein zusammenhängendes Urteil statt einer abgehakten Liste; Widersprüche — erhöht, aber verbrannt und schwach — werden benannt statt geglättet.</p>
 
   <h3>Divisional Charts & Chandra Lagna als vollwertige Horoskope</h3>
   <p>Navāṃśa und Chandra Lagna werden <strong>analog zum Rāśi</strong> als eigenständige Horoskope gedeutet: der D9 mit eigenem Lagna-Herrn, eigenen Hausherrschaften und Vargottama-Planeten, der Mond mit komplett neu gezählten Häusern — gleichrangig zur Lagna-Deutung.</p>
 
   <h3>Berichtslänge</h3>
-  <p>Der Premium-Bericht umfasst 16 Abschnitte und wird mit erhöhtem Token-Budget generiert, damit auch Jaimini und Zusammenfassung vollständig ausformuliert werden.</p>
+  <p>Der Premium-Bericht umfasst 16 Abschnitte und wird mit erweitertem Textumfang erstellt, damit auch die letzten Abschnitte — Jaimini und Zusammenfassung — vollständig ausformuliert werden.</p>
 
   <h3>Grenzen</h3>
   <ul>
@@ -786,7 +786,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 
   <h3>Strikte Trennung: Berechnung ↔ Deutung</h3>
   <p>Das Modell rechnet <strong>nichts selbst</strong> — keine Häuserzählung, keine Tierkreis-Abstände, keine Grad-Arithmetik. Alle relativen Positionen liefert die Engine vorab: Häuser vom Lagna, vom Mond und vom jeweiligen Varga-Lagna, dazu beide Referenzen für Transite. Fehlt eine benötigte Position, muss die Aussage entfallen statt hergeleitet zu werden — so kann ein Deutungstext nie von den angezeigten Charts abweichen.</p>
-  <div class="note"><strong>Transparenz:</strong> Die Berichte werden durch Claude (Anthropic) generiert. Das System-Prompt, die Facts-Extraktion und die Deutungslogik sind von AstroVeda entwickelt und kontrolliert.</div>
+  <div class="note"><strong>Transparenz:</strong> Die Berichte werden durch Claude (Anthropic) formuliert. Die Deutungsregeln, die Aufbereitung der berechneten Werte und die Deutungslogik sind von AstroVeda entwickelt und kontrolliert.</div>
 </div>
 
 <!-- 21 -->
