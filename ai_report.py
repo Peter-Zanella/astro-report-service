@@ -630,6 +630,80 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
         if _gu:
             f["upagrahas"] = _gu
 
+    # ── Konstitution — NUR wenn der Kunde selbst danach fragt ────────────────
+    # medical.py rechnet Prakṛti, Gunas, KAP-Punkte und Fokusbereiche ohnehin
+    # für den Medizin-Tab; die Deutung sah davon bisher nichts. Sie bekommt die
+    # Daten jetzt genau dann, wenn eine Frage sie verlangt — nie unaufgefordert,
+    # und Langlebigkeit nur bei ausdrücklicher Frage danach.
+    _q_txt = " ".join(str(q) for q in ((chart.get("meta") or {}).get("questions") or []))
+    for _k in ("prasna_question", "prasna_followup_of"):
+        if chart.get(_k):
+            _q_txt += " " + str(chart[_k])
+    _ql = _q_txt.lower()
+    _HEALTH_WORDS = (
+        # 'gesund' deckt gesund/Gesundheit/gesundheitlich ab; 'energie' wäre zu
+        # unscharf (Berufsfragen zur Energiebranche) und fehlt bewusst.
+        "gesund", "krank", "körper", "koerper", "beschwerden", "schmerz",
+        "heil", "genes", "konstitution", "erschöpf", "erschoepf", "burnout",
+        "immun", "verdauung", "schlaf", "arzt", "ärztlich", "therapie",
+        "operation", "wohlbefinden",
+        "health", "illness", "disease", "body", "pain", "healing", "recovery",
+        "constitution", "exhaust", "sleep", "digestion", "doctor", "therapy",
+        "surgery", "well-being",
+    )
+    _LIFE_WORDS = (
+        "lebenserwartung", "lebensdauer", "langlebigkeit", "wie lange lebe",
+        "wie alt werde", "sterbe", "todeszeitpunkt",
+        "lifespan", "life expectancy", "longevity", "how long will i live",
+        "when will i die",
+    )
+    _asks_health = any(w in _ql for w in _HEALTH_WORDS)
+    _asks_lifespan = any(w in _ql for w in _LIFE_WORDS)
+    if _asks_health or _asks_lifespan:
+        try:
+            import medical as _med
+            _kap = _med.compute_kap(chart)
+            _foc = _med.compute_focus(chart, _kap)
+            _dosh = _med.compute_doshas(chart)
+            _gun = _med.compute_gunas(chart)
+            _tot = _kap.get("totals", {}) or {}
+            _sens = sorted((p for p, v in _tot.items() if v),
+                           key=lambda p: -_tot[p])[:5]
+            f["constitution"] = {
+                "HINWEIS": ("Steht NUR zur Verfügung, weil die Frage nach "
+                            "Gesundheit verlangt. Konstitution und "
+                            "Belastungsschwerpunkte sind KEINE Diagnose: nenne "
+                            "die kritischen Bereiche, niemals ein "
+                            "Krankheitsbild und keinen konkreten Rat."),
+                "dosha": {"primaer": _dosh.get("primary"),
+                          "sekundaer": _dosh.get("secondary"),
+                          "mond": _dosh.get("moon_state"),
+                          "punkte": _dosh.get("scores")},
+                "guna": {"dominant": _gun.get("dominant"),
+                         "schwach": _gun.get("low"),
+                         "verteilung": _gun.get("counts")},
+                "sensible_grahas": {p: _tot[p] for p in _sens},
+                "fokusbereiche": [
+                    {"region": _it.get("body"), "score": _it.get("score"),
+                     "doppelt_bestaetigt": bool(_it.get("convergence"))}
+                    for _it in (_foc.get("items") or [])[:3]
+                ],
+                "herr6_trifft_herr8": bool(_foc.get("h6_h8_meet")),
+            }
+            if _asks_lifespan:
+                _ls = _med.compute_lifespan(chart)
+                f["longevity"] = {
+                    "HINWEIS": ("Steht NUR zur Verfügung, weil ausdrücklich "
+                                "danach gefragt wurde. Klassische "
+                                "Āyurdāya-TENDENZ, keine Vorhersage und keine "
+                                "Zahl. Nur mit Vorbehalt wiedergeben."),
+                    "tendenz": _ls.get("tendency"),
+                    "maraka_herren": _ls.get("maraka_lords"),
+                    "dushthana_herren": _ls.get("dushthana_lords"),
+                }
+        except Exception:
+            pass          # Medizin-Modul fehlt → Frage ohne Konstitution deuten
+
     return json.dumps(f, ensure_ascii=False, indent=1, default=str)
 
 
@@ -1243,7 +1317,21 @@ _SECTION_GUIDES = {
             "für das Timing). Alle Regeln gelten uneingeschränkt — besonders "
             "ehrliche Gewichtung, Laiensprache und Rechenverbot. Antworte "
             "klar und qualifiziert (keine Schicksalssprache), 400–700 Wörter, "
-            "und schliesse mit einer konkreten Orientierung.",
+            "und schliesse mit einer konkreten Orientierung. "
+            "GESUNDHEITSFRAGE: Ist — und nur dann — der Block 'constitution' "
+            "vorhanden, ziehe ihn zusätzlich heran: Prakṛti (Dosha), "
+            "Guna-Verteilung, die sensiblen Grahas und die Fokusbereiche "
+            "(doppelt bestätigte zuerst). Nenne daraus AUSSCHLIESSLICH die "
+            "kritischen Bereiche und was sie an Achtsamkeit nahelegen — kein "
+            "Krankheitsbild, keine Diagnose, kein konkreter Rat (keine "
+            "Präparate, Diäten, Übungen, Therapien) — und verweise einmal "
+            "sachlich auf ärztliche Abklärung. LEBENSERWARTUNG: Nur wenn der "
+            "Block 'longevity' vorhanden ist, also ausdrücklich danach gefragt "
+            "wurde, gib die TENDENZ wieder — nie eine Zahl, nie eine "
+            "Zeitspanne, nie einen Zeitpunkt — und immer mit dem Vorbehalt, "
+            "dass die klassischen Quellen einander widersprechen und die "
+            "Aussage nichts über den Einzelfall vorhersagt. Fehlt ein Block, "
+            "erwähne sein Thema mit keinem Wort.",
         "Zwei Horoskope im Überblick":
             "Stelle beide Personen kurz vor ('person_a' / 'person_b'): Lagna und sein "
             "Herr (inkl. 'lord_condition'), Mond mit Nakshatra und Pada, prägende Würden "
@@ -1608,7 +1696,20 @@ _SECTION_GUIDES = {
             "timing). All rules apply without exception — especially honest "
             "weighting, lay language and no self-calculation. Answer clearly "
             "and in a qualified way (no fate language), 400–700 words, "
-            "closing with concrete orientation.",
+            "closing with concrete orientation. "
+            "HEALTH QUESTION: If — and only if — the block 'constitution' is "
+            "present, draw on it as well: prakṛti (dosha), guna distribution, "
+            "the sensitive grahas and the focus areas (doubly confirmed ones "
+            "first). Name from it ONLY the critical areas and the attentiveness "
+            "they suggest — no disease label, no diagnosis, no concrete advice "
+            "(no supplements, diets, exercises, therapies) — and refer once, "
+            "matter-of-factly, to medical clarification. LIFESPAN: Only if the "
+            "block 'longevity' is present, i.e. it was explicitly asked about, "
+            "give the TENDENCY — never a number, never a span, never a date — "
+            "and always with the caveat that the classical sources contradict "
+            "one another and that the statement predicts nothing about the "
+            "individual case. If a block is absent, do not mention its subject "
+            "with a single word.",
         "Two charts at a glance":
             "Introduce both persons briefly ('person_a' / 'person_b'): Lagna and its lord "
             "(incl. 'lord_condition'), Moon with nakshatra and pada, defining dignities and "
@@ -1695,7 +1796,14 @@ def build_prompt(facts: str, lang: str, depth: str) -> str:
                 + " — Ziehe die passenden Häuser, Herren, Kārakas, "
                   "Divisionalcharts und die Daśā-Zeit heran; ehrliche "
                   "Gewichtung, Laiensprache und Rechenverbot gelten "
-                  "uneingeschränkt.")
+                  "uneingeschränkt. Betrifft eine Frage die GESUNDHEIT und ist "
+                  "der Block 'constitution' vorhanden, nimm ihn hinzu: nur die "
+                  "kritischen Bereiche benennen, kein Krankheitsbild, keine "
+                  "Diagnose, kein konkreter Rat, einmal sachlich auf ärztliche "
+                  "Abklärung verweisen. Nach LEBENSERWARTUNG nur antworten, "
+                  "wenn 'longevity' vorliegt — dann ausschliesslich die "
+                  "Tendenz, ohne Zahl oder Zeitspanne, mit dem Vorbehalt, dass "
+                  "die klassischen Quellen sich widersprechen.")
             q_extra = ("HINWEIS: Da individuelle Fragen vorliegen, halte die "
                        "Kapitel zu den Divisionalcharts (Navāṃśa, Daśāṃśa, "
                        "Drekkāna, Chaturthāṃśa) und "
@@ -1710,7 +1818,14 @@ def build_prompt(facts: str, lang: str, depth: str) -> str:
                 + " | ".join(f"Question {i+1}: «{q}»" for i, q in enumerate(_qs))
                 + " — Draw on the fitting houses, lords, karakas, divisional "
                   "charts and dasha timing; honest weighting, lay language "
-                  "and no self-calculation apply throughout.")
+                  "and no self-calculation apply throughout. If a question "
+                  "concerns HEALTH and the block 'constitution' is present, "
+                  "include it: name only the critical areas, no disease label, "
+                  "no diagnosis, no concrete advice, and refer once to medical "
+                  "clarification. Answer on LIFESPAN only if 'longevity' is "
+                  "present — then the tendency alone, without number or span, "
+                  "with the caveat that the classical sources contradict one "
+                  "another.")
             q_extra = ("NOTE: As individual questions are present, keep the "
                        "chapters on the divisional charts (Navāṃśa, Daśāṃśa, "
                        "Drekkāna, Chaturthāṃśa) "
