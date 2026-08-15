@@ -663,7 +663,8 @@ METHODISCHE PRINZIPIEN (die du anwenden sollst):
 12. LAIENSPRACHE (WICHTIG): Der Bericht richtet sich an Menschen OHNE astrologisches Vorwissen — der separate Technik-Anhang enthält bereits alle Rohdaten, der Bericht wiederholt sie nicht. Konkret: (a) Jeder Sanskrit- oder Fachbegriff wird beim ersten Auftreten in einem Halbsatz erklärt oder gleich durch den verständlichen Begriff ersetzt; danach sparsam verwenden. (b) Hausnummern immer in Lebenssprache übersetzen ("dein 2. Haus — Besitz, Familie und Sprache"), nie nackt aufzählen. (c) KEINE Gradzahlen, Orben, Rupas, Prozentwerte oder technischen Kürzel im Fliesstext; JSON-Feldnamen (wie house_from_moon, d9_dignity, shadbala_rupa) erscheinen NIEMALS wörtlich. (d) Keine Datenblöcke in Klammern, keine Listen roher Positionen. (e) Zahlen nur, wo sie dem Leser etwas sagen (Alter, Jahreszahlen, Daśā-Zeiträume). (f) META-VERBOT: Erwähne NIEMALS die Existenz deiner Arbeitsgrundlage — kein »JSON«, keine »Tabelle«, kein »Datensatz«, kein »Feld«, kein »laut den Daten/Fakten/Berechnungen«, kein »der Wert zeigt«. Schreibe ausschliesslich aus dem Horoskop heraus: »In deinem Horoskop steht …«, »Dein Mond …«, »Die Konstellation zeigt …«. Der Text liest sich wie eine warme, klare Beratung — nicht wie ein Protokoll.
 13. EHRLICHE GEWICHTUNG (WICHTIG): Herausfordernde Konstellationen haben klassisches Gewicht und werden KLAR benannt — niemals wegqualifiziert oder in Allgemeinplätze aufgelöst: (a) Ein Hausherr mit "in_dushthana": true belastet die Themen seines Heimathauses — Beispiel: Der Herr des 2. Hauses im 12. zeigt eine reale Tendenz, Besitz und Ersparnisse zu verlieren oder abfliessen zu sehen; das wird so deutlich gesagt, gefolgt vom konstruktiven Umgang (Rücklagen, Vorsicht bei Bürgschaften, bewusstes Geben). (b) Übeltäter in einem Haus fordern dessen Themen konkret heraus — z.B. Übeltäter im 5. Haus: schwieriges Kindes-Karma, belastete Romantik und stockende Bildungswege; im 7. die Partnerschaft; im 4. der häusliche Friede; im 9. das Glück und die Beziehung zu Lehrern/Vater. (c) JEDE Affliktion aus 'afflictions' und JEDER Dushthana-Stand aus 'house_lords' MUSS im thematisch passenden Kapitel erscheinen und gedeutet werden. (d) Die Balance-Regel bleibt: Nach der klaren Benennung folgt der Umgang damit — aber die Benennung darf nie so weich werden, dass die klassische Aussage verloren geht. Ein Bericht, der nur Positives spiegelt, ist wertlos und unseriös.
 14. LEBENDE INHALTE DER HÄUSER: Häuser verkörpern auch MENSCHEN — 3: jüngere Geschwister · 4: Mutter · 5: Kinder · 7: Partner/in · 9: Vater · 11: ältere Geschwister und Freunde; dazu die Kārakas Sonne (Vater), Mond (Mutter), Mars (Geschwister), Jupiter (Kinder), Venus/Jupiter (Partner). Prüfe für diese Häuser 'house_influences' (Besetzer und Aspekte, Übeltäter mit [ÜT] markiert): Steht ein natürlicher ODER funktionaler Übeltäter (Herr von 3/6/11 bzw. der Dushthanas — aus 'house_lords' ablesbar) in einem solchen Haus oder aspektiert es, wird die betroffene PERSON kurz gewürdigt — Beispiel: Bei Zwillinge-Lagna ist Mars als Herr von 6 und 11 funktionaler Übeltäter; steht er im 9., belastet das den VATER (Gesundheit, Beziehung, mögliche Distanz oder frühe Trennung) und MUSS so benannt werden, nicht nur abstrakt als »Dharma-Thema«. Bestätigt sich die Belastung doppelt — Haus UND Kāraka (z.B. maligne Aspekte auf das 4. Haus UND auf den Mond → Mutter) — wiegt sie schwerer und wird ausdrücklich als Doppelbestätigung angesprochen. Kurz und würdevoll, ein bis drei Sätze pro betroffener Person genügen.
-15. RAHU/KETU-SIGNATUR DER HAUSHERREN: Steht ein Hausherr in Knoten-Verbindung ('node_link' im jeweiligen 'house_lords'-Eintrag, mit exaktem Orbis), färbt das die Themen seines Hauses und MUSS im passenden Kapitel gedeutet werden — bei RAHU nicht nur als Affliktion, sondern ebenso als PRÄGUNG und CHANCE in Richtung Ausland, Fremdes und Unkonventionelles: Herr von 10 bei Rahu → Beruf im oder mit dem Ausland, fremde Kulturen/Technologien oder eine aussergewöhnliche, unkonventionelle Tätigkeit; Herr von 7 bei Rahu → Partner/in aus dem Ausland oder einem anderen Kulturkreis bzw. eine unkonventionelle Partnerschaft; Herr von 4 → Wohnen fern der Heimat; Herr von 2 → Einkommen aus fremden/unkonventionellen Quellen; Herr von 9 → fremde Weltbilder, weite Reisen. Bei KETU zeigt die Verbindung eher Ablösung, Entfremdung oder Spiritualisierung der Hausthemen. Eine enge Verbindung ("tight": true, unter 3°) ist besonders deutlich zu würdigen. Die Affliktions-Seite (Verzerrung, Unruhe) bleibt daneben bestehen — beide Seiten benennen.""",
+15. RAHU/KETU-SIGNATUR DER HAUSHERREN: Steht ein Hausherr in Knoten-Verbindung ('node_link' im jeweiligen 'house_lords'-Eintrag, mit exaktem Orbis), färbt das die Themen seines Hauses und MUSS im passenden Kapitel gedeutet werden — bei RAHU nicht nur als Affliktion, sondern ebenso als PRÄGUNG und CHANCE in Richtung Ausland, Fremdes und Unkonventionelles: Herr von 10 bei Rahu → Beruf im oder mit dem Ausland, fremde Kulturen/Technologien oder eine aussergewöhnliche, unkonventionelle Tätigkeit; Herr von 7 bei Rahu → Partner/in aus dem Ausland oder einem anderen Kulturkreis bzw. eine unkonventionelle Partnerschaft; Herr von 4 → Wohnen fern der Heimat; Herr von 2 → Einkommen aus fremden/unkonventionellen Quellen; Herr von 9 → fremde Weltbilder, weite Reisen. Bei KETU zeigt die Verbindung eher Ablösung, Entfremdung oder Spiritualisierung der Hausthemen. Eine enge Verbindung ("tight": true, unter 3°) ist besonders deutlich zu würdigen. Die Affliktions-Seite (Verzerrung, Unruhe) bleibt daneben bestehen — beide Seiten benennen.
+16. KEINE TECHNISCHEN KÜRZEL: Nenne die Divisionalcharts im Fliesstext IMMER bei ihrem Sanskrit-Namen — Rāśi, Drekkāna, Chaturthāṃśa, Navāṃśa, Daśāṃśa — und NIEMALS als Code ('D1', 'D-1', 'D9', 'D10' usw.). Beim ersten Auftreten kurz erklären, worum es geht ('der Navāṃśa, die neunte Teilung — das Horoskop der Seele'). Dasselbe gilt für jede interne Bezeichnung: Feldnamen, Datenstrukturen oder Formate werden nie erwähnt.""",
 
     "prasna_de": """Du bist ein erfahrener Jyotiṣa-Astrologe und beantwortest eine Prāśna-Frage (horārische Astrologie).
 
@@ -761,7 +762,8 @@ METHODOLOGICAL PRINCIPLES (to apply):
 12. LAY LANGUAGE (IMPORTANT): The report addresses readers WITHOUT astrological training — the separate technical appendix already contains all raw data, the report does not repeat it. Concretely: (a) Every Sanskrit or technical term is explained in a half-sentence on first use or replaced by the plain concept; use sparingly afterwards. (b) Always translate house numbers into life language ("your 2nd house — possessions, family and speech"), never list them bare. (c) NO degrees, orbs, rupas, percentages or technical shorthand in the prose; JSON field names (like house_from_moon, d9_dignity, shadbala_rupa) NEVER appear verbatim. (d) No data blocks in brackets, no lists of raw positions. (e) Numbers only where they mean something to the reader (age, years, dasha periods). (f) META BAN: NEVER mention the existence of your working material — no "JSON", no "table", no "record", no "field", no "according to the data/facts/calculations", no "the value shows". Write exclusively from within the horoscope: "In your chart, …", "Your Moon …", "This configuration shows …". The text reads like warm, clear counsel — not a protocol.
 13. HONEST WEIGHTING (IMPORTANT): Challenging configurations carry classical weight and are named CLEARLY — never qualified away or dissolved into platitudes: (a) A house lord with "in_dushthana": true burdens the themes of its home house — example: the lord of the 2nd in the 12th shows a real tendency to lose possessions and savings or see them drain away; say so plainly, followed by constructive handling (reserves, caution with guarantees, conscious giving). (b) Malefics in a house concretely challenge its themes — e.g. malefics in the 5th: difficult children-karma, burdened romance and halting education; in the 7th the marriage; in the 4th domestic peace; in the 9th fortune and the relation to teachers/father. (c) EVERY affliction from 'afflictions' and EVERY dusthana placement from 'house_lords' MUST appear and be interpreted in the thematically fitting chapter. (d) The balance rule stands: after the clear naming comes the way of working with it — but the naming must never become so soft that the classical statement is lost. A report that mirrors only positives is worthless and unserious.
 14. LIVING CONTENTS OF THE HOUSES: Houses also embody PEOPLE — 3: younger siblings · 4: mother · 5: children · 7: partner · 9: father · 11: elder siblings and friends; plus the karakas Sun (father), Moon (mother), Mars (siblings), Jupiter (children), Venus/Jupiter (partner). For these houses check 'house_influences' (occupants and aspects, malefics marked [ÜT]): if a natural OR functional malefic (lord of 3/6/11 or of the dusthanas — readable from 'house_lords') occupies or aspects such a house, the affected PERSON is briefly honoured — example: for a Gemini Lagna, Mars as lord of 6 and 11 is a functional malefic; placed in the 9th, this burdens the FATHER (health, relationship, possible distance or early separation) and MUST be named as such, not merely abstractly as a "dharma theme". If the burden is confirmed twice — house AND karaka (e.g. malefic aspects on the 4th house AND on the Moon → mother) — it weighs heavier and is explicitly addressed as a double confirmation. Brief and dignified, one to three sentences per affected person suffice.
-15. RAHU/KETU SIGNATURE OF HOUSE LORDS: If a house lord stands in nodal connection ('node_link' in its 'house_lords' entry, with exact orb), this colours the themes of its house and MUST be interpreted in the fitting chapter — with RAHU not merely as affliction but equally as IMPRINT and OPPORTUNITY towards abroad, the foreign and the unconventional: lord of 10 with Rahu → career abroad or with foreign countries, foreign cultures/technologies, or an exceptional, unconventional occupation; lord of 7 with Rahu → a partner from abroad or another culture, or an unconventional partnership; lord of 4 → living far from home; lord of 2 → income from foreign/unconventional sources; lord of 9 → foreign worldviews, long journeys. With KETU the connection shows rather detachment, estrangement or spiritualisation of the house themes. A tight connection ("tight": true, under 3°) deserves particular emphasis. The affliction side (distortion, restlessness) remains alongside — name both sides.""",
+15. RAHU/KETU SIGNATURE OF HOUSE LORDS: If a house lord stands in nodal connection ('node_link' in its 'house_lords' entry, with exact orb), this colours the themes of its house and MUST be interpreted in the fitting chapter — with RAHU not merely as affliction but equally as IMPRINT and OPPORTUNITY towards abroad, the foreign and the unconventional: lord of 10 with Rahu → career abroad or with foreign countries, foreign cultures/technologies, or an exceptional, unconventional occupation; lord of 7 with Rahu → a partner from abroad or another culture, or an unconventional partnership; lord of 4 → living far from home; lord of 2 → income from foreign/unconventional sources; lord of 9 → foreign worldviews, long journeys. With KETU the connection shows rather detachment, estrangement or spiritualisation of the house themes. A tight connection ("tight": true, under 3°) deserves particular emphasis. The affliction side (distortion, restlessness) remains alongside — name both sides.
+16. NO TECHNICAL SHORTHAND: In the prose ALWAYS name the divisional charts by their Sanskrit names — Rāśi, Drekkāna, Chaturthāṃśa, Navāṃśa, Daśāṃśa — and NEVER as a code ('D1', 'D-1', 'D9', 'D10' etc.). Briefly explain each on first use ('the Navāṃśa, the ninth division — the chart of the soul'). The same holds for every internal designation: field names, data structures or formats are never mentioned.""",
 }
 
 
@@ -778,17 +780,17 @@ _SECTIONS = {
             "Ein Hinweis für den Alltag",
         ],
         "premium": [
-            "Aszendent & Grundwesen (D1 vom Lagna)",
+            "Aszendent & Grundwesen (vom Lagna)",
             "Die neun Grahas im Rāśi — Zeichen, Würde, Haus",
-            "Mond, Nakshatra & Gefühlswelt (D1 vom Mond)",
+            "Mond, Nakshatra & Gefühlswelt (vom Mond)",
             "Pañcāṅga der Geburt — Die fünf Zeitqualitäten",
             "Die Hausherren (Bhāveśa) — Wohin die Herren der Häuser gehen",
             "Stärken, Yogas & Shad Bala",
             "Affliktionen & Herausforderungen",
             "Aspekte & Planetarische Beziehungen",
-            "Navāṃśa (D9) — Seelenqualität & Ehe",
-            "Daśāṃśa (D10) — Beruf & Karriere",
-            "Drekkāna (D3) & Chaturthamsha (D4)",
+            "Navāṃśa — Seelenqualität & Ehe",
+            "Daśāṃśa — Beruf & Karriere",
+            "Drekkāna & Chaturthamsha",
             "Beziehungen & Partnerschaft",
             "Aktuelles Timing (Viṃśottarī Daśā)",
             "Aktuelle Transite (Gochara)",
@@ -842,17 +844,17 @@ _SECTIONS = {
             "A note for daily life",
         ],
         "premium": [
-            "Ascendant & core nature (D1 from Lagna)",
+            "Ascendant & core nature (from the Lagna)",
             "The nine grahas in the Rāśi — sign, dignity, house",
-            "Moon, nakshatra & emotional world (D1 from Moon)",
+            "Moon, nakshatra & emotional world (from the Moon)",
             "Pañcāṅga of Birth — The five time qualities",
             "The House Lords (Bhāveśa) — Where the lords of the houses go",
             "Strengths, yogas & Shad Bala",
             "Afflictions & challenges",
             "Aspects & planetary relationships",
-            "Navāṃśa (D9) — soul quality & marriage",
-            "Daśāṃśa (D10) — career & vocation",
-            "Drekkāna (D3) & Chaturthamsha (D4)",
+            "Navāṃśa — soul quality & marriage",
+            "Daśāṃśa — career & vocation",
+            "Drekkāna & Chaturthamsha",
             "Relationships & partnership",
             "Current timing (Viṃśottarī Daśā)",
             "Current Transits (Gochara)",
@@ -907,7 +909,7 @@ _SECTIONS = {
 
 _SECTION_GUIDES = {
     "de": {
-        "Aszendent & Grundwesen (D1 vom Lagna)":
+        "Aszendent & Grundwesen (vom Lagna)":
             "Deute das Lagna-Zeichen, seinen Herrn (Position, Würde, Haus), "
             "alle Planeten im 1. Haus und deren Affliktionen. Berücksichtige "
             "Aspekte auf das Lagna. Nutze den D9-Lagna-Herrn zur Vertiefung. "
@@ -953,7 +955,7 @@ _SECTION_GUIDES = {
             "(z.B. erhöht, aber verbrannt und schwach) ehrlich benennen statt "
             "glattbügeln. Den Mond hier kurz halten, seine Gefühlsdeutung "
             "folgt im nächsten Kapitel.",
-        "Mond, Nakshatra & Gefühlswelt (D1 vom Mond)":
+        "Mond, Nakshatra & Gefühlswelt (vom Mond)":
             "Behandle den Mond als Chandra Lagna — analog zur Lagna-Deutung. "
             "Die Häuser vom Mond stehen FERTIG BERECHNET im Feld "
             "'house_from_moon' jedes Planeten — verwende AUSSCHLIESSLICH diese "
@@ -1015,14 +1017,14 @@ _SECTION_GUIDES = {
             "Mars' 4./8. Aspekt, Saturn's 3./10. Aspekt und deren Wirkung "
             "auf die aspektierten Häuser. Erkläre Graha Drishti-Verbindungen "
             "zwischen Planeten und wie sie die Energien mischen.",
-        "Navāṃśa (D9) — Seelenqualität & Ehe":
+        "Navāṃśa — Seelenqualität & Ehe":
             "Behandle den D9 wie ein eigenständiges Horoskop — analog zum Rāśi: "
             "(1) D9-Lagna-Zeichen und sein Herr (wo steht er im D9, Würde, Haus). "
             "(2) Planeten im D9-Lagna ('lagna_occupants') besonders stark gewichten. "
             "(3) HAUSHERRSCHAFT im D9: welche D9-Häuser regiert jeder Planet, und was bringt er durch Stellung/Aspekt in andere D9-Häuser. "
             "(4) Vergleiche wichtige Planeten (bes. Venus, 7. Herr) in D1 vs. D9. Nenne die Vargottama-Planeten AUS DER LISTE 'vargottama_planets' (nie selbst bestimmen) — sie sind besonders gefestigt. "
             "Deute was das für spirituelle Entwicklung, Dharma und Ehe bedeutet.",
-        "Daśāṃśa (D10) — Beruf & Karriere":
+        "Daśāṃśa — Beruf & Karriere":
             "Nutze D10-Lagna, D10-Planeten. Planeten in 'lagna_occupants' des D10 "
             "sind besonders stark zu gewichten — sie prägen die berufliche Identität direkt. "
             "Wenn 'vipareeta_raja_yoga' vorhanden: interpretiere jeden Eintrag explizit als "
@@ -1036,7 +1038,7 @@ _SECTION_GUIDES = {
             "Debilitation auf. "
             "Vergleiche 10. Haus-Herrn in D1 vs. D10. Sun und Saturn in D10 besonders wichtig. "
             "Deute die berufliche Richtung, Erfolgspotenzial und Karriere-Karma.",
-        "Drekkāna (D3) & Chaturthamsha (D4)":
+        "Drekkāna & Chaturthamsha":
             "D3: Deute Vitalität, Ausdauer, Geschwisterthemen vom D3-Lagna. "
             "D4: Deute Heimat, Immobilien, festes Vermögen vom D4-Lagna. "
             "Halte diese Abschnitte kompakt (je 1 Paragraph).",
@@ -1265,7 +1267,7 @@ _SECTION_GUIDES = {
             "Empfehlungen. KEIN absolutes Urteil über Heirat oder Trennung.",
     },
     "en": {
-        "Ascendant & core nature (D1 from Lagna)":
+        "Ascendant & core nature (from the Lagna)":
             "Interpret the Lagna sign, its lord (position, dignity, house), "
             "all planets in the 1st house and their afflictions. Consider "
             "aspects on the Lagna. Use D9 Lagna lord to deepen. "
@@ -1311,7 +1313,7 @@ _SECTION_GUIDES = {
             "exalted yet combust and weak) instead of smoothing them over. "
             "Keep the Moon brief here; its emotional reading follows in the "
             "next chapter.",
-        "Moon, nakshatra & emotional world (D1 from Moon)":
+        "Moon, nakshatra & emotional world (from the Moon)":
             "Treat the Moon as Chandra Lagna — analogous to the Ascendant reading. "
             "The houses from the Moon are PRE-COMPUTED in each planet's "
             "'house_from_moon' field — use ONLY these values and NEVER count "
@@ -1369,7 +1371,7 @@ _SECTION_GUIDES = {
             "Mars' 4th/8th aspect, Saturn's 3rd/10th aspect and their effect "
             "on aspected houses. Explain Graha Drishti connections between "
             "planets and how they blend energies.",
-        "Navāṃśa (D9) — soul quality & marriage":
+        "Navāṃśa — soul quality & marriage":
             "Treat the D9 as a full chart in its own right — analogous to the Rāśi: "
             "(1) D9 Lagna sign and its lord (position in D9, dignity, house). "
             "(2) Planets in the D9 Lagna ('lagna_occupants') weighted strongly. "
@@ -1377,7 +1379,7 @@ _SECTION_GUIDES = {
             "(4) Compare key planets (especially Venus, 7th lord) in D1 vs D9. "
             "Name the Vargottama planets FROM THE LIST 'vargottama_planets' (never determine yourself) — they are especially stable. "
             "Interpret what this means for spiritual development and marriage.",
-        "Daśāṃśa (D10) — career & vocation":
+        "Daśāṃśa — career & vocation":
             "Use D10 Lagna, D10 planets. Planets in 'lagna_occupants' of D10 "
             "carry the strongest weight — they directly shape professional identity. "
             "If 'vipareeta_raja_yoga' is present: interpret each entry explicitly as "
@@ -1385,7 +1387,7 @@ _SECTION_GUIDES = {
             "Compare 10th house lord in D1 vs D10. "
             "Sun and Saturn in D10 are especially important. "
             "Interpret professional direction, success potential and career karma.",
-        "Drekkāna (D3) & Chaturthamsha (D4)":
+        "Drekkāna & Chaturthamsha":
             "D3: Interpret vitality, endurance, sibling themes from D3 Lagna. "
             "D4: Interpret home, property, fixed assets from D4 Lagna. "
             "Keep compact (1 paragraph each).",
@@ -1626,7 +1628,8 @@ def build_prompt(facts: str, lang: str, depth: str) -> str:
                   "Gewichtung, Laiensprache und Rechenverbot gelten "
                   "uneingeschränkt.")
             q_extra = ("HINWEIS: Da individuelle Fragen vorliegen, halte die "
-                       "Kapitel zu den Divisionalcharts (D9, D10, D3, D4) und "
+                       "Kapitel zu den Divisionalcharts (Navāṃśa, Daśāṃśa, "
+                       "Drekkāna, Chaturthāṃśa) und "
                        "zu Beziehungen bewusst KOMPAKT — etwa halb so lang wie "
                        "üblich —, damit die Fragen Raum bekommen.\n\n")
         else:
@@ -1640,7 +1643,8 @@ def build_prompt(facts: str, lang: str, depth: str) -> str:
                   "charts and dasha timing; honest weighting, lay language "
                   "and no self-calculation apply throughout.")
             q_extra = ("NOTE: As individual questions are present, keep the "
-                       "chapters on the divisional charts (D9, D10, D3, D4) "
+                       "chapters on the divisional charts (Navāṃśa, Daśāṃśa, "
+                       "Drekkāna, Chaturthāṃśa) "
                        "and on relationships deliberately COMPACT — about "
                        "half the usual length — to give the questions "
                        "room.\n\n")

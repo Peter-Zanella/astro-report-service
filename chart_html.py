@@ -641,7 +641,7 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
     name_g=m.get('name','')+(f" ({m['gender']})" if m.get('gender') else "")
 
     # ── Main rasi chart svgs ──────────────────────────────────────────────────
-    rasi_svgs   = _chart_svgs(li, sp_rasi,  "Rāśi · D-1", planet_data=pls)
+    rasi_svgs   = _chart_svgs(li, sp_rasi,  "Rāśi · Hauptkarte", planet_data=pls)
     bhava_svgs  = _chart_svgs(li, sp_bhava, "Bhava Chalit", planet_data=pls)
     # ── Upagrahas (Schattenplaneten): eigene Tabelle im Planeten-Tab ─────────
     _upa = chart.get("upagrahas", {}) or {}
@@ -767,10 +767,10 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
     # Divisional-Charts erscheinen.
     _retro_pd = {p: {"retrograde": True}
                  for p, pd in pls.items() if pd.get("retrograde")}
-    d9_svgs     = _chart_svgs(d9li,  sp_d9,  "Navāṃśa · D-9",  planet_data=_retro_pd)
-    d3_svgs     = _chart_svgs(d3li,  sp_d3,  "Drekkāna · D-3", planet_data=_retro_pd)
-    d10_svgs    = _chart_svgs(d10li, sp_d10, "Daśāṃśa · D-10", planet_data=_retro_pd)
-    d4_svgs     = _chart_svgs(d4li,  sp_d4,  "Chaturthamśa · D-4", planet_data=_retro_pd)
+    d9_svgs     = _chart_svgs(d9li,  sp_d9,  "Navāṃśa · 9. Teilung",  planet_data=_retro_pd)
+    d3_svgs     = _chart_svgs(d3li,  sp_d3,  "Drekkāna · 3. Teilung", planet_data=_retro_pd)
+    d10_svgs    = _chart_svgs(d10li, sp_d10, "Daśāṃśa · 10. Teilung", planet_data=_retro_pd)
+    d4_svgs     = _chart_svgs(d4li,  sp_d4,  "Chaturthamśa · 4. Teilung", planet_data=_retro_pd)
     vp_svgs     = _chart_svgs(vp_li, sp_vp,  f"Varshaphala · Year {vp.get('year','')}", planet_data=vp.get("planets"))
     tr_svgs     = _chart_svgs(tr_li, sp_tr,  f"Gochara · {chart.get('transit_date','today')}",
                               planet_data=tr_pls)
@@ -1026,7 +1026,7 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 <!-- CHART -->
 <div class="tp" id="tab-chart">
   <div class="cg">
-    <div class="cc"><h3>Rāśi · D-1</h3>{rasi_svgs}</div>
+    <div class="cc"><h3>Rāśi · Hauptkarte</h3>{rasi_svgs}</div>
     <div class="cc"><h3>Bhava Chalit</h3>{bhava_svgs}</div>
   </div>
 </div>
@@ -1050,10 +1050,10 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 <!-- DIVISIONAL -->
 <div class="tp" id="tab-divisional">
   <div class="cg">
-    <div class="cc"><h3>Navāṃśa · D-9</h3>{d9_svgs}{d9_note}</div>
-    <div class="cc"><h3>Drekkāna · D-3</h3>{d3_svgs}</div>
-    <div class="cc"><h3>Daśāṃśa · D-10</h3>{d10_svgs}{d10_note}</div>
-    <div class="cc"><h3>Chaturthamśa · D-4</h3>{d4_svgs}</div>
+    <div class="cc"><h3>Navāṃśa · 9. Teilung</h3>{d9_svgs}{d9_note}</div>
+    <div class="cc"><h3>Drekkāna · 3. Teilung</h3>{d3_svgs}</div>
+    <div class="cc"><h3>Daśāṃśa · 10. Teilung</h3>{d10_svgs}{d10_note}</div>
+    <div class="cc"><h3>Chaturthamśa · 4. Teilung</h3>{d4_svgs}</div>
   </div>
 </div>
 
