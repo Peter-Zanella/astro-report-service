@@ -794,7 +794,7 @@ _SECTIONS = {
             "Beziehungen & Partnerschaft",
             "Aktuelles Timing (Viṃśottarī Daśā)",
             "Aktuelle Transite (Gochara)",
-            "Jaimini — Ātmakāraka & Arudha",
+            "Jaimini — Ātmakāraka & Arudhā",
             "Zusammenfassung",
         ],
         "year": [
@@ -909,6 +909,41 @@ _SECTIONS = {
 
 _SECTION_GUIDES = {
     "de": {
+        # ── Basis-Bericht (4 kurze Kapitel, ~4000 Tokens) ────────────────────
+        "Aszendent & Grundwesen":
+            "Eröffnungskapitel des Basis-Berichts. Deute das Lagna-Zeichen, "
+            "seinen Herrn aus 'lagna.lord_details' (Zeichen, Haus, Würde, "
+            "Affliktionen) und die Planeten im 1. Haus. Greife danach die zwei "
+            "bis drei prägendsten Stellungen aus 'planets' heraus — je mit "
+            "Zeichen, Haus und Würde — statt alle neun Grahas durchzugehen: "
+            "Der Basis-Bericht gibt einen Überblick, keine vollständige "
+            "Würdigung. Sanskrit-Begriffe beim ersten Auftreten kurz erklären. "
+            "Kompakt: 3–5 Absätze.",
+        "Mond & Gefühlswelt":
+            "Deute den Mond aus 'moon' — Zeichen, Haus, Nakshatra mit Pada, "
+            "Würde — zusammen mit seinen Affliktionen. Beschreibe daraus die "
+            "emotionale Grundstruktur: wie dieser Mensch fühlt, was ihn "
+            "beruhigt, was ihn aufwühlt. Die Häuser vom Mond stehen FERTIG "
+            "BERECHNET im Feld 'house_from_moon' jedes Planeten — verwende "
+            "ausschliesslich diese Werte und zähle NIEMALS selbst. Höchstens "
+            "zwei Planeten nennen, die den Mond prägen. Kompakt: 3–4 Absätze.",
+        "Kernthemen & Stärken":
+            "Die zwei bis drei tragenden Themen des Horoskops — nicht mehr. "
+            "Stütze dich auf die stärksten Einträge in 'yogas', auf "
+            "'shadbala_strongest' und 'shadbala_weakest' sowie auf die "
+            "auffälligsten Stellungen in 'house_lords'. Sage zu jedem Thema, "
+            "woran es im gelebten Alltag sichtbar wird. Schwächen ehrlich "
+            "benennen, aber ohne Dramatik — keine Schicksalssprache, keine "
+            "Aussagen zu Krankheit, Lebensdauer oder Finanzprognosen. "
+            "Kompakt: 3–4 Absätze.",
+        "Ein Hinweis für den Alltag":
+            "Abschluss des Basis-Berichts: EIN konkreter, umsetzbarer Impuls, "
+            "der aus dem zuvor Gedeuteten folgt — keine neue Analyse, keine "
+            "neuen Faktoren, keine Liste. Beziehe ihn wenn möglich auf die "
+            "laufende Periode aus 'vimshottari_current'. Warm, ermutigend und "
+            "alltagsnah, ohne medizinische, rechtliche oder finanzielle "
+            "Ratschläge. Sehr kompakt: 1–2 Absätze.",
+        # ── Premium & übrige Tiefen ──────────────────────────────────────────
         "Aszendent & Grundwesen (vom Lagna)":
             "Deute das Lagna-Zeichen, seinen Herrn (Position, Würde, Haus), "
             "alle Planeten im 1. Haus und deren Affliktionen. Berücksichtige "
@@ -1267,6 +1302,40 @@ _SECTION_GUIDES = {
             "Empfehlungen. KEIN absolutes Urteil über Heirat oder Trennung.",
     },
     "en": {
+        # ── Basic report (4 short chapters, ~4000 tokens) ────────────────────
+        "Ascendant & core nature":
+            "Opening chapter of the basic report. Interpret the Lagna sign, "
+            "its lord from 'lagna.lord_details' (sign, house, dignity, "
+            "afflictions) and the planets in the 1st house. Then pick out the "
+            "two or three most defining placements from 'planets' — each with "
+            "sign, house and dignity — rather than working through all nine "
+            "grahas: the basic report gives an overview, not a full appraisal. "
+            "Briefly explain Sanskrit terms on first use. "
+            "Keep it compact: 3–5 paragraphs.",
+        "Moon & emotional world":
+            "Interpret the Moon from 'moon' — sign, house, nakshatra with "
+            "pada, dignity — together with its afflictions. From this describe "
+            "the emotional foundation: how this person feels, what settles "
+            "them, what unsettles them. The houses from the Moon are "
+            "PRE-COMPUTED in each planet's 'house_from_moon' field — use ONLY "
+            "these values and NEVER count yourself. Name at most two planets "
+            "that shape the Moon. Keep it compact: 3–4 paragraphs.",
+        "Key themes & strengths":
+            "The two or three load-bearing themes of the chart — no more. "
+            "Draw on the strongest entries in 'yogas', on "
+            "'shadbala_strongest' and 'shadbala_weakest', and on the most "
+            "striking placements in 'house_lords'. For each theme, say where "
+            "it becomes visible in everyday life. Name weaknesses honestly but "
+            "without drama — no language of fate, no statements about illness, "
+            "lifespan or financial forecasts. Keep it compact: 3–4 paragraphs.",
+        "A note for daily life":
+            "Closing the basic report: ONE concrete, actionable impulse that "
+            "follows from what was already interpreted — no new analysis, no "
+            "new factors, no list. Where possible tie it to the running period "
+            "in 'vimshottari_current'. Warm, encouraging and down-to-earth, "
+            "without medical, legal or financial advice. "
+            "Very compact: 1–2 paragraphs.",
+        # ── Premium & remaining depths ───────────────────────────────────────
         "Ascendant & core nature (from the Lagna)":
             "Interpret the Lagna sign, its lord (position, dignity, house), "
             "all planets in the 1st house and their afflictions. Consider "
