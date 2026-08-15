@@ -255,6 +255,11 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         "lat": _vp_lat, "lon": _vp_lon, "off": _rawm.get("offset", 0),
         "name": _rawm.get("name", ""), "gender": _rawm.get("gender", ""),
     })
+    # XSS: _cmp_a_json landet roh in einem <script>-Block, und json.dumps
+    # escapet '<' nicht — ein Name wie '</script><img src=x onerror=…>' bräche
+    # sonst aus dem Script-Tag aus. Der Unicode-Escape wird von JS beim Parsen
+    # des Objekt-Literals wieder zu '<' — der Wert bleibt also unverändert.
+    _cmp_a_json = _cmp_a_json.replace("<", "\\u003c")
     vp_pls = vp.get("planets",{})
     sp_vp  = _build_sign_planets(vp_pls) if vp_pls else sp_rasi
 

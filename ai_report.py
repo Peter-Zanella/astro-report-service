@@ -1600,17 +1600,18 @@ def generate_interpretation(
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise RuntimeError("Set ANTHROPIC_API_KEY in the environment.")
 
-    if depth not in ("basis", "premium", "year", "prasna", "partner", "frage"):
+    if depth not in ("basis", "premium", "year", "prasna", "prasna_zusatz",
+                     "partner", "frage"):
         depth = "premium"
     if max_tokens == 0:
         max_tokens = (4000 if depth == "basis"
-                      else 5000 if depth == "frage"
+                      else 5000 if depth in ("frage", "prasna_zusatz")
                       else 6000 if depth in ("prasna", "year")
                       else 10000 if depth == "partner"
                       else 16000)
 
     facts  = build_facts(chart, depth=depth)
-    if depth == "prasna":
+    if depth.startswith("prasna"):          # prasna + prasna_zusatz
         system_key = f"prasna_{lang}"
     elif depth == "partner":
         system_key = f"partner_{lang}"
@@ -1619,8 +1620,18 @@ def generate_interpretation(
     system = _BASE_RULES.get(system_key, _BASE_RULES[lang])
     prompt = build_prompt(facts, lang, depth)
 
-    client = anthropic.Anthropic()
-    base_messages = [{"role": "user", "content": prompt}]
+    # max_retries=0: transiente Fehler wiederholt _stream_with_retry unten selbst.
+    # Ohne dies retryt das SDK zusätzlich 2× pro Versuch — aus den 4 eigenen
+    # Versuchen würden bis zu 12 API-Calls und eine sehr lange Hängezeit.
+    client = anthropic.Anthropic(max_retries=0)
+    # cache_control: System-Prompt + Fakten sind über alle Fortsetzungs-Schritte
+    # (_run_once, bis zu 3) und den Leer-Retry byteweise identisch — der
+    # Cache-Read kostet ~10 % des Input-Preises. Kürzere Prompts (frage,
+    # prasna_zusatz) liegen ggf. unter der Mindestgrösse und werden still nicht
+    # gecacht — das ist unschädlich.
+    base_messages = [{"role": "user",
+                      "content": [{"type": "text", "text": prompt,
+                                   "cache_control": {"type": "ephemeral"}}]}]
 
     # STREAMING statt eines nicht-gestreamten Calls: bei grossem max_tokens (bis
     # 16000) lehnt das SDK einen nicht-gestreamten Request wegen der ~10-Minuten-
@@ -1665,6 +1676,20 @@ def generate_interpretation(
                 system=system,
                 messages=msgs,
             )
+            # Diagnose (kann entfernt werden, sobald das Caching bestätigt ist):
+            # cache_read > 0 ab Schritt 2 heisst, der cache_control-Breakpoint
+            # greift. Bleibt er 0, liegt der Prompt unter der Mindestgrösse und
+            # der Breakpoint bringt nichts.
+            _u = getattr(resp, "usage", None)
+            if _u is not None:
+                import sys as _sys_dbg
+                print(f"ai_report: {depth} Schritt {_step + 1} — "
+                      f"in={getattr(_u, 'input_tokens', 0)} "
+                      f"cache_write={getattr(_u, 'cache_creation_input_tokens', 0)} "
+                      f"cache_read={getattr(_u, 'cache_read_input_tokens', 0)} "
+                      f"out={getattr(_u, 'output_tokens', 0)} "
+                      f"stop={getattr(resp, 'stop_reason', None)}",
+                      file=_sys_dbg.stderr)
             if getattr(resp, "stop_reason", None) == "refusal":
                 raise _Refusal()
             chunk = "".join(
