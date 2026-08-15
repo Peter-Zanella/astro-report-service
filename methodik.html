@@ -146,7 +146,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <p>Intern wird im <strong>Julianischen Datum</strong> in Universalzeit gerechnet. Die Ortszeit-Umrechnung nutzt historisch korrekte Zeitzonen (IANA tz-Datenbank), nicht heutige UTC-Offsets — für Horoskope vor 1970 ist das entscheidend.</p>
 
   <h3>Koordinatensystem</h3>
-  <p><strong>Ekliptikale Längen</strong> (0°–360°), reduziert um den Lahiri Ayanamsha: <code>sid_lon = (trop_lon − ayan) mod 360</code>, daraus <code>sign_idx = floor(sid_lon / 30)</code> und <code>pos_in_sign = sid_lon mod 30</code>.</p>
+  <p><strong>Ekliptikale Längen</strong> (0°–360°), reduziert um den Lahiri Ayanamsha: <code>siderische Länge = (tropische Länge − Ayanamsha) mod 360</code>. Daraus folgen Zeichen und Gradposition als <code>Zeichen = siderische Länge / 30</code> (abgerundet) und <code>Grad im Zeichen = siderische Länge mod 30</code>.</p>
   <div class="sources">
     <div class="src"><div class="src-title">Moshier, S.L. / Astrodienst AG (1997–2024)</div><div class="src-detail">Swiss Ephemeris, Version 2.10. astro.com. Basiert auf JPL DE431 (Folkner et al., 2014).</div></div>
     <div class="src"><div class="src-title">Folkner, W.M., Williams, J.G., Boggs, D.H. et al. (2014)</div><div class="src-detail">The Planetary and Lunar Ephemerides DE430 and DE431. IPN Progress Report 42-196, JPL/NASA.</div></div>
@@ -866,7 +866,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   <p>Trifft die siderische Position einen natalen Sensitivpunkt (Lagna, Mond, Kendra- oder Trikona-Herr), gilt die Finsternis als bedeutsamer Auslöser für das betroffene Lebensthema; Devata und Herr des Nakshatra verfeinern die Deutung.</p>
   <div class="note"><strong>Statisches Referenz-Asset:</strong> Die Finsternis-Tabelle wird einmalig vorberechnet und als statisches Datenblatt gespeichert — bei jedem Aufruf erfolgt reine Anzeige, keine Neuberechnung. Der Finsternis-Tab erlaubt die Auswahl eines einzelnen Kalenderjahres.</div>
   <div class="sources">
-    <div class="src"><div class="src-title">Swiss Ephemeris — Eclipse Routines</div><div class="src-detail">sol_eclipse_when_glob / lun_eclipse_when; siderische Umrechnung mit Lahiri-Ayanamsha.</div></div>
+    <div class="src"><div class="src-title">Swiss Ephemeris — Finsternis-Routinen</div><div class="src-detail">Globale Sonnen- und Mondfinsternis-Zeitpunkte; siderische Umrechnung mit Lahiri-Ayanamsha.</div></div>
     <div class="src"><div class="src-title">Parashara — BPHS: Grahaṇa & Transit-Wirkung</div><div class="src-detail">Klassische Grundlagen zur karmischen Bedeutung von Finsternissen.</div></div>
   </div>
 </div>
