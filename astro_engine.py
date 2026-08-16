@@ -675,30 +675,18 @@ def _retro_flags(jd: float) -> Dict[str, bool]:
 #: gilt das für beide Richtungen.
 _TATKALIKA_FRIEND = (1, 2, 3, 4, 10, 11, 12)
 
-#: Zusammensetzung der Würde aus natürlicher und temporärer Freundschaft.
-#:
-#: Abweichung von der strengen Pañcadhā Maitrī: Dort wiegen beide Ebenen
-#: gleich, weshalb ein temporärer Feind einen natürlichen Freund bis auf
-#: "neutral" herunterzieht (Mars im Löwen wurde so zum neutralen Zeichen,
-#: obwohl die Sonne sein natürlicher Freund ist). Hier wiegt die TEMPORÄRE
-#: Beziehung geringer: Sie verschiebt das Ergebnis um eine Stufe INNERHALB
-#: der natürlichen Seite, kann aber niemals die Seite wechseln. Aus einem
-#: Freundeszeichen wird also nie ein neutrales, aus einem Feindzeichen nie
-#: ein freundliches.
-#:
-#:   natürlich   temporär   streng (Pañcadhā)   hier
-#:   Freund      Freund     grosser Freund      grosser Freund
-#:   Freund      Feind      neutral             Freund
-#:   neutral     Freund     Freund              Freund
-#:   neutral     Feind      Feind               neutral
-#:   Feind       Freund     neutral             Feind
-#:   Feind       Feind      grosser Feind       grosser Feind
+#: Zusammensetzung der Würde aus natürlicher und temporärer Freundschaft —
+#: die klassische Pañcadhā Maitrī, beide Ebenen gleich gewichtet. Konvention
+#: wie Kala und Parashara's Light. (Eine zwischenzeitliche Variante, die die
+#: temporäre Ebene schwächer gewichtete, ist zurückgenommen: Der gemeldete
+#: Fall — Mars bei der Sonne im Löwen — löst sich bereits über die
+#: Konjunktionsregel in _TATKALIKA_FRIEND, ohne von Kala abzuweichen.)
 _COMPOUND_DIGNITY = {
     ("friend", "friend"):  "Great Friend's Sign",
-    ("friend", "enemy"):   "Friend's Sign",
+    ("friend", "enemy"):   "Neutral Sign",
     ("neutral", "friend"): "Friend's Sign",
-    ("neutral", "enemy"):  "Neutral Sign",
-    ("enemy", "friend"):   "Enemy's Sign",
+    ("neutral", "enemy"):  "Enemy's Sign",
+    ("enemy", "friend"):   "Neutral Sign",
     ("enemy", "enemy"):    "Great Enemy's Sign",
 }
 
