@@ -664,6 +664,17 @@ def _retro_flags(jd: float) -> Dict[str, bool]:
     return out
 
 
+#: Temporäre (Tatkālika) Freundschaft: Zeichenabstände, die als freundlich
+#: gelten. Die klassische Menge ist 2/3/4/10/11/12; das **1.** — also zwei
+#: Planeten im SELBEN Zeichen — zählt dort zu den Feinden. AstroVeda wertet
+#: die Konjunktion stattdessen als temporäre FREUNDSCHAFT, wie es auch Kala
+#: tut: Zwei Grahas, die beieinander stehen, als temporär verfeindet zu
+#: führen, widerspricht der Anschauung und zog etwa Mars bei der Sonne im
+#: Löwen von "grosser Freund" auf "neutral" herunter.
+#: Die Relation bleibt dabei gegenseitig — steht A im selben Zeichen wie B,
+#: gilt das für beide Richtungen.
+_TATKALIKA_FRIEND = (1, 2, 3, 4, 10, 11, 12)
+
 #: Zusammensetzung der Würde aus natürlicher und temporärer Freundschaft.
 #:
 #: Abweichung von der strengen Pañcadhā Maitrī: Dort wiegen beide Ebenen
@@ -714,7 +725,7 @@ def _apply_compound_dignity(planets: Dict) -> None:
         nat = ("friend" if lord in _friends else
                "enemy" if lord in _enemies else "neutral")
         rel_house = (si[lord] - si[p]) % 12 + 1
-        temp = "friend" if rel_house in (2, 3, 4, 10, 11, 12) else "enemy"
+        temp = "friend" if rel_house in _TATKALIKA_FRIEND else "enemy"
         planets[p]["dignity"] = _COMPOUND_DIGNITY[(nat, temp)]
         # Herleitung mitliefern. Ohne sie las sich ein zusammengesetztes
         # "Neutral Sign" so, als sei das Zeichen selbst neutral — bei Mars im
