@@ -549,6 +549,14 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         med_html = ("<p style='color:var(--mu)'>Medizin-Modul nicht verf&uuml;gbar "
                     f"({type(_me).__name__}).</p>")
 
+    # ── Fixstern-Tab (fixstars.py — optional wie medical/eclipse_db) ─────────
+    try:
+        import fixstars as _fix
+        fixstars_html = _fix.render_tab(chart)
+    except Exception as _fe:
+        fixstars_html = ("<p style='color:var(--mu)'>Fixstern-Modul nicht "
+                         f"verf&uuml;gbar ({type(_fe).__name__}).</p>")
+
     # ── Remedies-Tab (remedies.py — optional wie medical/eclipse_db) ─────────
     try:
         import remedies as _rem
@@ -1014,6 +1022,7 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <button class="tb" onclick="showTab('muhurta',this);muhurtaInit()">Muhūrta</button>
   <button class="tb" onclick="showTab('eclipses',this)">Finsternisse</button>
   <button class="tb" onclick="showTab('medical',this)">Medizin</button>
+  <button class="tb" onclick="showTab('fixstars',this)">Fixsterne</button>
   <button class="tb" onclick="showTab('remedies',this)">Upāyas</button>
   <button class="tb" onclick="showTab('compat',this)">Kompatibilität</button>
 </div>
@@ -1183,6 +1192,10 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 <div class="tp" id="tab-medical">
   <p class="sh">Medizinische Astrologie · Ayurveda-Jyoti&#7779;a</p>
   {med_html}
+</div>
+
+<div class="tp" id="tab-fixstars">
+  {fixstars_html}
 </div>
 
 <div class="tp" id="tab-remedies">
