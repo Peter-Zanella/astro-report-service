@@ -5,30 +5,29 @@ fixstars.py — Fixstern-Konjunktionen im Rāśi (D1).
 Reine ANZEIGE: Das Modul liefert einen eigenen Tab im Bericht und fliesst
 bewusst NICHT in die KI-Deutung ein — es steht in keinem Faktenblock.
 
-Datenherkunft und Umrechnung
-────────────────────────────
-Die Vorlage nennt die Sternpositionen **tropisch** zur Epoche 2026. Dieses
-Projekt rechnet durchgehend **siderisch (Lahiri)**; direkt übernommen läge
-jeder Stern rund 24° falsch. Die Tabelle wird deshalb beim Laden einmalig
-umgerechnet:
+Zwei Positionsquellen, in dieser Reihenfolge
+────────────────────────────────────────────
+1. **Swiss Ephemeris** (bevorzugt): ``fixstar2_ut`` im Sidereal-Modus Lahiri,
+   gestellt auf das Julianische Datum der GEBURT (``chart['meta']['jd']``).
+   Bogensekundengenau, berücksichtigt Eigenbewegung, veraltet nie.
+2. **Statische Tabelle** (Rückfall je Stern): Die Vorlage nennt die Positionen
+   **tropisch** zur Epoche 2026 und auf ganze Grad gerundet. Sie werden mit
+   derselben Lahiri-Funktion umgerechnet, die auch die Planeten benutzen::
 
-    siderisch = (tropisch − Ayanamsha(2026.0)) mod 360
+       siderisch = (tropisch − Ayanamsha(2026.0)) mod 360
 
-mit derselben Lahiri-Funktion, die auch die Planeten benutzen
-(astro_engine._ayanamsha). Kontrollpunkt: Lahiri ist über Spica bei 180°00'
-definiert — die Vorlage landet bei 179.8°, die Abweichung stammt aus ihrer
-Rundung auf ganze Grad.
+   Kontrollpunkt: Lahiri ist über Spica bei 180°00' definiert; die Vorlage
+   landet bei 179.8°, die Restabweichung stammt aus ihrer Rundung.
 
-Im siderischen Tierkreis sind Fixsterne über Jahrhunderte praktisch
-ortsfest (nur Eigenbewegung, Bogensekunden pro Jahrhundert), die Tabelle
-veraltet also nicht. Die Rundung der Vorlage auf 1° bleibt aber die
-begrenzende Genauigkeit — bei Praxis-Orben von 1–1.5° ist das spürbar und
-wird im Tab offen ausgewiesen.
+Der Rückfall greift **pro Stern**, nicht global: Findet die Ephemeride einen
+Namen nicht, behält nur dieser eine Stern seinen Tabellenwert. Welche Quelle
+gewonnen hat, steht im Tab — so ist im Betrieb sofort sichtbar, ob die
+Ephemeride wirklich greift.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 SIGNS_DE = ["Widder", "Stier", "Zwillinge", "Krebs", "Löwe", "Jungfrau",
             "Waage", "Skorpion", "Schütze", "Steinbock", "Wassermann", "Fische"]
@@ -36,62 +35,102 @@ SIGNS_DE = ["Widder", "Stier", "Zwillinge", "Krebs", "Löwe", "Jungfrau",
 #: Julianisches Datum zu 2026.0 — Epoche der tropischen Vorlage.
 EPOCH_JD = 2461041.5
 
-#: Deutsche Namen der Grahas für die Anzeige.
 DE = {"Ascendant": "Aszendent", "Sun": "Sonne", "Moon": "Mond", "Mars": "Mars",
       "Mercury": "Merkur", "Jupiter": "Jupiter", "Venus": "Venus",
       "Saturn": "Saturn", "Rahu": "Rāhu", "Ketu": "Ketu"}
 
-#: Reihenfolge der geprüften Punkte — klassisch wirken Fixsterne vor allem
-#: auf Lagna und die Lichter.
+#: Klassisch wirken Fixsterne vor allem auf Lagna und die Lichter.
 BODIES = ["Ascendant", "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter",
           "Saturn", "Rahu", "Ketu"]
 
-#: (Name, tropischer Grad, tropischer Zeichenindex, Natur, Themen, Praxis-Orb)
-#: Vorlage unverändert übernommen; die Umrechnung geschieht in _sidereal().
-TROPICAL_2026: List[Tuple[str, float, int, str, str, float]] = [
-    ("Algol",        26.0,  1, "Saturn/Jupiter", "extreme Intensität, Machtfragen, Kontrollverlust", 1.5),
-    ("Aldebaran",    10.0,  2, "Mars",           "Mut, Durchsetzung, Ehre, militärischer Erfolg", 1.5),
-    ("Rigel",        17.0,  2, "Jupiter/Saturn", "Erfolg, Können, Rang", 1.0),
-    ("Sirius",       15.0,  3, "Jupiter/Mars",   "Ruhm, Macht, Ehrgeiz, aussergewöhnlicher Erfolg", 1.5),
-    ("Castor",       21.0,  3, "Merkur",         "Intellekt, Geschicklichkeit, Schreiben", 1.0),
-    ("Pollux",       24.0,  3, "Mars",           "Mut, Wettbewerb, Härte", 1.0),
-    ("Procyon",      26.0,  3, "Merkur/Mars",    "schneller Aufstieg, Aktivität — aber Instabilität", 1.0),
-    ("Regulus",       0.0,  5, "Mars/Jupiter",   "Herrschaft, Rang, Ruhm, Aufstieg", 1.5),
-    ("Vindemiatrix", 10.0,  6, "Saturn/Merkur",  "Vorsicht, Trennung, schwierige Entscheidungen", 1.0),
-    ("Spica",        24.0,  6, "Venus/Mars",     "Schutz, Talent, Erfolg, Kunst, Gelehrsamkeit", 1.5),
-    ("Arcturus",     24.0,  6, "Mars/Jupiter",   "Führung, Erfolg, Wohlstand", 1.0),
-    ("Unukalhai",    22.0,  7, "Saturn/Mars",    "Gefahr, Konflikt, schwierige Verwicklungen", 1.0),
-    ("Antares",      10.0,  8, "Mars/Jupiter",   "Mut, Kampf, Ruhm, extreme Ambition", 1.5),
-    ("Vega",         15.0,  9, "Venus/Merkur",   "Kunst, Musik, Charisma, Raffinesse", 1.5),
-    ("Altair",        2.0, 10, "Mars/Jupiter",   "Kühnheit, Ehrgeiz, Aufstieg", 1.0),
-    ("Deneb Algedi", 24.0, 10, "Saturn/Jupiter", "Recht, Autorität, Integrität", 1.0),
-    ("Fomalhaut",     4.0, 11, "Venus/Merkur",   "Idealismus, Vision, Kunst, Spiritualität", 1.5),
-    # Vorlage nennt "30° Fische" — das ist exakt die Zeichengrenze (= 0° Widder).
-    # Gemeint ist das Ende der Fische; hier als 29°30' geführt.
-    ("Scheat",       29.5, 11, "Mars/Merkur",    "Intellekt, Unabhängigkeit, extreme Erfahrungen", 1.0),
+#: (Name, tropischer Grad, Zeichenindex, Natur, Themen, Praxis-Orb,
+#:  Suchnamen für Swiss Ephemeris — Eigenname zuerst, Bayer als Rückfall)
+TROPICAL_2026: List[Tuple[str, float, int, str, str, float, Tuple[str, ...]]] = [
+    ("Algol",        26.0,  1, "Saturn/Jupiter", "extreme Intensität, Machtfragen, Kontrollverlust", 1.5, ("Algol", ",bePer")),
+    ("Aldebaran",    10.0,  2, "Mars",           "Mut, Durchsetzung, Ehre, militärischer Erfolg", 1.5, ("Aldebaran", ",alTau")),
+    ("Rigel",        17.0,  2, "Jupiter/Saturn", "Erfolg, Können, Rang", 1.0, ("Rigel", ",beOri")),
+    ("Sirius",       15.0,  3, "Jupiter/Mars",   "Ruhm, Macht, Ehrgeiz, aussergewöhnlicher Erfolg", 1.5, ("Sirius", ",alCMa")),
+    ("Castor",       21.0,  3, "Merkur",         "Intellekt, Geschicklichkeit, Schreiben", 1.0, ("Castor", ",alGem")),
+    ("Pollux",       24.0,  3, "Mars",           "Mut, Wettbewerb, Härte", 1.0, ("Pollux", ",beGem")),
+    ("Procyon",      26.0,  3, "Merkur/Mars",    "schneller Aufstieg, Aktivität — aber Instabilität", 1.0, ("Procyon", ",alCMi")),
+    ("Regulus",       0.0,  5, "Mars/Jupiter",   "Herrschaft, Rang, Ruhm, Aufstieg", 1.5, ("Regulus", ",alLeo")),
+    ("Vindemiatrix", 10.0,  6, "Saturn/Merkur",  "Vorsicht, Trennung, schwierige Entscheidungen", 1.0, ("Vindemiatrix", ",epVir")),
+    ("Spica",        24.0,  6, "Venus/Mars",     "Schutz, Talent, Erfolg, Kunst, Gelehrsamkeit", 1.5, ("Spica", ",alVir")),
+    ("Arcturus",     24.0,  6, "Mars/Jupiter",   "Führung, Erfolg, Wohlstand", 1.0, ("Arcturus", ",alBoo")),
+    ("Unukalhai",    22.0,  7, "Saturn/Mars",    "Gefahr, Konflikt, schwierige Verwicklungen", 1.0, ("Unukalhai", ",alSer")),
+    ("Antares",      10.0,  8, "Mars/Jupiter",   "Mut, Kampf, Ruhm, extreme Ambition", 1.5, ("Antares", ",alSco")),
+    ("Vega",         15.0,  9, "Venus/Merkur",   "Kunst, Musik, Charisma, Raffinesse", 1.5, ("Vega", ",alLyr")),
+    ("Altair",        2.0, 10, "Mars/Jupiter",   "Kühnheit, Ehrgeiz, Aufstieg", 1.0, ("Altair", ",alAql")),
+    ("Deneb Algedi", 24.0, 10, "Saturn/Jupiter", "Recht, Autorität, Integrität", 1.0, ("Deneb Algedi", ",deCap")),
+    ("Fomalhaut",     4.0, 11, "Venus/Merkur",   "Idealismus, Vision, Kunst, Spiritualität", 1.5, ("Fomalhaut", ",alPsA")),
+    # Vorlage nennt "30° Fische" — exakt die Zeichengrenze (= 0° Widder).
+    # Gemeint ist das Ende der Fische; hier als 29°30' geführt. Liefert die
+    # Ephemeride einen Wert, ersetzt er diesen Näherungswert ohnehin.
+    ("Scheat",       29.5, 11, "Mars/Merkur",    "Intellekt, Unabhängigkeit, extreme Erfahrungen", 1.0, ("Scheat", ",bePeg")),
 ]
 
-_CACHE: List[Dict] = []
 
-
-def _sidereal() -> List[Dict]:
-    """Tabelle einmalig nach siderisch (Lahiri) umgerechnet."""
-    if _CACHE:
-        return _CACHE
+def _table_lon(deg: float, sign_idx: int) -> float:
+    """Tropischer Tabellenwert → siderisch (Lahiri, Epoche der Vorlage)."""
     try:
         from astro_engine import _ayanamsha
         ayan = _ayanamsha(EPOCH_JD)
     except Exception:
         ayan = 24.2163                      # Lahiri 2026.0, Notnagel
-    for name, deg, si, nature, theme, orb in TROPICAL_2026:
-        lon = ((si * 30 + deg) - ayan) % 360
-        _CACHE.append({
-            "name": name, "lon": round(lon, 2),
+    return ((sign_idx * 30 + deg) - ayan) % 360
+
+
+def _swe_lon(names: Tuple[str, ...], jd: float) -> Optional[float]:
+    """Siderische Länge aus der Swiss Ephemeris, oder None.
+
+    Probiert Eigenname und Bayer-Bezeichnung. Jeder Fehler — Modul fehlt,
+    Sterndatei fehlt, Name unbekannt — führt zu None und damit zum
+    Tabellenwert dieses einen Sterns.
+    """
+    try:
+        import swisseph as swe
+    except Exception:
+        return None
+    try:
+        swe.set_sid_mode(swe.SIDM_LAHIRI, 0, 0)
+        flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+    except Exception:
+        return None
+    for nm in names:
+        try:
+            res = swe.fixstar2_ut(nm, jd, flags)
+        except Exception:
+            continue
+        try:
+            # pyswisseph 2.10: ((lon, lat, dist, ...), name, retflag)
+            xx = res[0]
+            lon = float(xx[0]) if isinstance(xx, (list, tuple)) else float(xx)
+        except Exception:
+            continue
+        if 0.0 <= lon < 360.0:
+            return lon
+    return None
+
+
+def positions(jd: Optional[float] = None) -> Tuple[List[Dict], str]:
+    """(Sternliste, Quelle). Quelle ∈ {'swisseph', 'gemischt', 'tabelle'}."""
+    out, n_swe = [], 0
+    for name, deg, si, nature, theme, orb, swe_names in TROPICAL_2026:
+        lon = _swe_lon(swe_names, jd) if jd else None
+        src = "swisseph" if lon is not None else "tabelle"
+        if lon is None:
+            lon = _table_lon(deg, si)
+        else:
+            n_swe += 1
+        out.append({
+            "name": name, "lon": round(lon, 4), "src": src,
             "sign": SIGNS_DE[int(lon // 30)], "deg_in_sign": round(lon % 30, 2),
             "nature": nature, "themes": theme, "orb": orb,
         })
-    _CACHE.sort(key=lambda s: s["lon"])
-    return _CACHE
+    out.sort(key=lambda s: s["lon"])
+    source = ("swisseph" if n_swe == len(out)
+              else "tabelle" if n_swe == 0 else "gemischt")
+    return out, source
 
 
 def _sep(a: float, b: float) -> float:
@@ -101,33 +140,49 @@ def _sep(a: float, b: float) -> float:
 
 
 def compute(chart: Dict) -> Dict:
-    """{'stars': [...], 'hits': [...]} — Konjunktionen im D1 innerhalb des
+    """{'stars', 'hits', 'source'} — Konjunktionen im D1 innerhalb des
     jeweiligen Praxis-Orbs. Nur Rāśi; Divisionalcharts bleiben aussen vor."""
     pls = chart.get("planets", {}) or {}
+    jd = (chart.get("meta") or {}).get("jd")
+    stars, source = positions(jd)
     hits = []
     for body in BODIES:
-        rec = pls.get(body) or {}
-        lon = rec.get("lon")
+        lon = (pls.get(body) or {}).get("lon")
         if lon is None:
             continue
-        for st in _sidereal():
+        for st in stars:
             sep = _sep(float(lon), st["lon"])
             if sep <= st["orb"]:
                 hits.append({
                     "body": body, "body_de": DE.get(body, body),
                     "star": st["name"], "orb": round(sep, 2),
-                    "tight": sep <= 0.5,
-                    "nature": st["nature"], "themes": st["themes"],
-                    "sign": st["sign"], "deg_in_sign": st["deg_in_sign"],
+                    "tight": sep <= 0.5, "nature": st["nature"],
+                    "themes": st["themes"], "sign": st["sign"],
+                    "deg_in_sign": st["deg_in_sign"],
                 })
     hits.sort(key=lambda h: (BODIES.index(h["body"]), h["orb"]))
-    return {"stars": _sidereal(), "hits": hits}
+    return {"stars": stars, "hits": hits, "source": source}
+
+
+_SRC_NOTE = {
+    "swisseph": ("Positionen aus der <strong>Swiss Ephemeris</strong>, siderisch "
+                 "(Lahiri), gestellt auf den Geburtszeitpunkt — bogensekundengenau."),
+    "gemischt": ("Positionen &uuml;berwiegend aus der <strong>Swiss Ephemeris</strong>; "
+                 "einzelne Sterne, deren Namen die Sterndatei nicht kennt, stammen "
+                 "aus der gerundeten Tabelle."),
+    "tabelle":  ("Die Swiss Ephemeris war nicht erreichbar. Die Positionen stammen "
+                 "aus der <strong>tropischen Vorlage</strong> (Epoche 2026, auf ganze "
+                 "Grad gerundet), umgerechnet mit dem Lahiri-Ayanamsha. Kontrollpunkt: "
+                 "Spica liegt definitionsgem&auml;ss auf 180&deg;00', die Tabelle "
+                 "landet bei 179.8&deg;. Bei Orben von 1–1.5&deg; ist diese Rundung "
+                 "zu bedenken."),
+}
 
 
 def render_tab(chart: Dict) -> str:
     """Innerer HTML-Inhalt des Fixstern-Tabs (Dark-Theme des Viewers)."""
     data = compute(chart)
-    hits, stars = data["hits"], data["stars"]
+    hits, stars, source = data["hits"], data["stars"], data["source"]
 
     if hits:
         rows = "".join(
@@ -151,7 +206,7 @@ def render_tab(chart: Dict) -> str:
 
     srows = "".join(
         f"<tr><td><strong>{s['name']}</strong></td>"
-        f"<td>{s['deg_in_sign']:.1f}&deg; {s['sign']}</td>"
+        f"<td>{s['deg_in_sign']:.2f}&deg; {s['sign']}</td>"
         f"<td style='color:var(--mu)'>{s['nature']}</td>"
         f"<td style='color:var(--mu);font-size:.86rem'>{s['themes']}</td>"
         f"<td style='color:var(--mu)'>&plusmn;{s['orb']}&deg;</td></tr>"
@@ -169,12 +224,7 @@ Diese Seite ist reine Beobachtung und flie&szlig;t nicht in die Deutung ein.</p>
 {hit_html}
 
 <h3 style="margin:22px 0 6px">Die Fixsterne, siderisch (Lahiri)</h3>
-{f'<table class="dt"><thead><tr><th>Stern</th><th>Position</th><th>Natur</th>'
- f'<th>Themen</th><th>Orb</th></tr></thead><tbody>{srows}</tbody></table>'}
+<table class="dt"><thead><tr><th>Stern</th><th>Position</th><th>Natur</th>
+<th>Themen</th><th>Orb</th></tr></thead><tbody>{srows}</tbody></table>
 <p style="color:var(--mu);font-size:.82rem;margin:8px 0 0;line-height:1.5">
-Die Vorlage nennt die Positionen <strong>tropisch</strong> und auf ganze Grad
-gerundet; sie sind hier mit dem Lahiri-Ayanamsha der Epoche 2026 nach
-<strong>siderisch</strong> umgerechnet. Kontrollpunkt: Lahiri ist &uuml;ber Spica
-bei 180&deg;00' definiert, die Tabelle landet bei 179.8&deg;. Aus der Rundung
-bleibt eine Unsch&auml;rfe von bis zu einem halben Grad — bei Orben von 1–1.5&deg;
-ist das zu bedenken.</p>"""
+{_SRC_NOTE.get(source, '')}</p>"""
