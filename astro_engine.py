@@ -664,6 +664,34 @@ def _retro_flags(jd: float) -> Dict[str, bool]:
     return out
 
 
+#: Zusammensetzung der Würde aus natürlicher und temporärer Freundschaft.
+#:
+#: Abweichung von der strengen Pañcadhā Maitrī: Dort wiegen beide Ebenen
+#: gleich, weshalb ein temporärer Feind einen natürlichen Freund bis auf
+#: "neutral" herunterzieht (Mars im Löwen wurde so zum neutralen Zeichen,
+#: obwohl die Sonne sein natürlicher Freund ist). Hier wiegt die TEMPORÄRE
+#: Beziehung geringer: Sie verschiebt das Ergebnis um eine Stufe INNERHALB
+#: der natürlichen Seite, kann aber niemals die Seite wechseln. Aus einem
+#: Freundeszeichen wird also nie ein neutrales, aus einem Feindzeichen nie
+#: ein freundliches.
+#:
+#:   natürlich   temporär   streng (Pañcadhā)   hier
+#:   Freund      Freund     grosser Freund      grosser Freund
+#:   Freund      Feind      neutral             Freund
+#:   neutral     Freund     Freund              Freund
+#:   neutral     Feind      Feind               neutral
+#:   Feind       Freund     neutral             Feind
+#:   Feind       Feind      grosser Feind       grosser Feind
+_COMPOUND_DIGNITY = {
+    ("friend", "friend"):  "Great Friend's Sign",
+    ("friend", "enemy"):   "Friend's Sign",
+    ("neutral", "friend"): "Friend's Sign",
+    ("neutral", "enemy"):  "Neutral Sign",
+    ("enemy", "friend"):   "Enemy's Sign",
+    ("enemy", "enemy"):    "Great Enemy's Sign",
+}
+
+
 def _apply_compound_dignity(planets: Dict) -> None:
     """Pañcadhā Maitrī: füllt für So–Sa die Würde in Freund-/Feindzeichen
     (zusammengesetzt aus natürlicher UND temporärer Freundschaft zum
@@ -687,14 +715,7 @@ def _apply_compound_dignity(planets: Dict) -> None:
                "enemy" if lord in _enemies else "neutral")
         rel_house = (si[lord] - si[p]) % 12 + 1
         temp = "friend" if rel_house in (2, 3, 4, 10, 11, 12) else "enemy"
-        planets[p]["dignity"] = {
-            ("friend", "friend"):  "Great Friend's Sign",
-            ("friend", "enemy"):   "Neutral Sign",
-            ("neutral", "friend"): "Friend's Sign",
-            ("neutral", "enemy"):  "Enemy's Sign",
-            ("enemy", "friend"):   "Neutral Sign",
-            ("enemy", "enemy"):    "Great Enemy's Sign",
-        }[(nat, temp)]
+        planets[p]["dignity"] = _COMPOUND_DIGNITY[(nat, temp)]
         # Herleitung mitliefern. Ohne sie las sich ein zusammengesetztes
         # "Neutral Sign" so, als sei das Zeichen selbst neutral — bei Mars im
         # Löwen etwa ist der Zeichenherr ein natürlicher FREUND, und erst die
