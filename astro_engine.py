@@ -695,6 +695,16 @@ def _apply_compound_dignity(planets: Dict) -> None:
             ("enemy", "friend"):   "Neutral Sign",
             ("enemy", "enemy"):    "Great Enemy's Sign",
         }[(nat, temp)]
+        # Herleitung mitliefern. Ohne sie las sich ein zusammengesetztes
+        # "Neutral Sign" so, als sei das Zeichen selbst neutral — bei Mars im
+        # Löwen etwa ist der Zeichenherr ein natürlicher FREUND, und erst die
+        # temporäre Entfremdung macht das Ergebnis neutral.
+        planets[p]["dignity_parts"] = {
+            "sign_lord": lord,
+            "natural": nat,               # friend | neutral | enemy
+            "temporal": temp,             # friend | enemy
+            "lord_house_from_planet": rel_house,
+        }
 
 
 _GANDANTA_ZONE = {

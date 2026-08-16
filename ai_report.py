@@ -317,6 +317,10 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
             "d9_sign":   p_d9_sign,            # from astro_engine — authoritative
             "d9_dignity": p_d9.get("dignity"), # from astro_engine — authoritative
             "vargottama": is_vargottama,       # from astro_engine — authoritative
+            # Herleitung der Würde (Pañcadhā Maitrī). Ohne sie liest sich ein
+            # zusammengesetztes "Neutral Sign" so, als wäre das Zeichen selbst
+            # neutral — obwohl der Zeichenherr ein natürlicher Freund sein kann.
+            "dignity_parts":   d.get("dignity_parts"),
             # Zeichenherr (Dispositor) und wo er steht — Punkt 2 der Würdigung
             "sign_lord":       _SL_P.get(d.get("sign")),
             "sign_lord_house": pls.get(_SL_P.get(d.get("sign"), ""), {}).get("house"),
@@ -1052,7 +1056,15 @@ _SECTION_GUIDES = {
             "(2) Zeichen und dessen Herr ('sign', 'sign_lord', "
             "'sign_lord_house') — wo der Dispositor steht, färbt den Graha mit; "
             "(3) Würde ausschliesslich aus 'dignity' (Uccha, Nīca, eigenes "
-            "Zeichen, Freund, Feind) — NIEMALS selbst bestimmen; "
+            "Zeichen, Freund, Feind) — NIEMALS selbst bestimmen. Steht in "
+            "'dignity_parts' eine Herleitung, NENNE sie, statt nur das "
+            "Ergebnis zu behaupten: 'natural' ist das Verhältnis zum "
+            "Zeichenherrn von Natur aus, 'temporal' das augenblickliche aus "
+            "seiner Stellung. Ein zusammengesetztes »neutral« aus natürlicher "
+            "Freundschaft und temporärer Entfremdung ist ausdrücklich NICHT "
+            "dasselbe wie ein neutrales Zeichen — schreibe dann sinngemäss "
+            "'im Zeichen eines Freundes, der ihm derzeit fernsteht, deshalb "
+            "im Ergebnis ausgeglichen' und niemals 'ein neutrales Zeichen'; "
             "(4) Hausposition aus 'house'; "
             "(5) Herrschaften aus 'rules_houses' — welche Häuser dieser Graha "
             "für DIESES Lagna regiert und was er von dort in sein Standhaus "
@@ -1458,7 +1470,14 @@ _SECTION_GUIDES = {
             "(2) sign and its lord ('sign', 'sign_lord', 'sign_lord_house') — "
             "where the dispositor sits colours the graha; "
             "(3) dignity from 'dignity' only (exalted, debilitated, own sign, "
-            "friend, enemy) — NEVER determine it yourself; "
+            "friend, enemy) — NEVER determine it yourself. Where "
+            "'dignity_parts' carries a derivation, NAME it instead of just "
+            "asserting the result: 'natural' is the standing relationship to "
+            "the sign lord, 'temporal' the momentary one from its placement. A "
+            "compound \"neutral\" made of natural friendship and temporal "
+            "estrangement is explicitly NOT the same as a neutral sign — write "
+            "'in the sign of a friend who currently stands apart from it, "
+            "hence balanced in effect' and never 'a neutral sign'; "
             "(4) house position from 'house'; "
             "(5) rulerships from 'rules_houses' — which houses this graha rules "
             "for THIS Lagna, and what it carries from there into the house it "
