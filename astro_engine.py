@@ -665,22 +665,21 @@ def _retro_flags(jd: float) -> Dict[str, bool]:
 
 
 #: Temporäre (Tatkālika) Freundschaft: Zeichenabstände, die als freundlich
-#: gelten. Die klassische Menge ist 2/3/4/10/11/12; das **1.** — also zwei
-#: Planeten im SELBEN Zeichen — zählt dort zu den Feinden. AstroVeda wertet
-#: die Konjunktion stattdessen als temporäre FREUNDSCHAFT, wie es auch Kala
-#: tut: Zwei Grahas, die beieinander stehen, als temporär verfeindet zu
-#: führen, widerspricht der Anschauung und zog etwa Mars bei der Sonne im
-#: Löwen von "grosser Freund" auf "neutral" herunter.
-#: Die Relation bleibt dabei gegenseitig — steht A im selben Zeichen wie B,
-#: gilt das für beide Richtungen.
-_TATKALIKA_FRIEND = (1, 2, 3, 4, 10, 11, 12)
+#: gelten — die klassische Menge. Das 1., also zwei Planeten im SELBEN
+#: Zeichen, gehört bewusst NICHT dazu: Die Konjunktion zählt klassisch zu den
+#: temporären Feindschaften, weshalb etwa Mars bei der Sonne im Löwen als
+#: neutral geführt wird (natürlicher Freund + temporärer Feind = Sama),
+#: obwohl der Zeichenherr sein natürlicher Freund ist. Das ist gewollt; die
+#: Herleitung wird der Deutung über 'dignity_parts' mitgegeben, damit das
+#: Ergebnis nicht als Eigenschaft des Zeichens missverstanden wird.
+#: Die Relation ist gegenseitig — steht A im n-ten Zeichen von B, so B im
+#: entsprechenden von A, und beide Seiten fallen gleich aus.
+_TATKALIKA_FRIEND = (2, 3, 4, 10, 11, 12)
 
 #: Zusammensetzung der Würde aus natürlicher und temporärer Freundschaft —
-#: die klassische Pañcadhā Maitrī, beide Ebenen gleich gewichtet. Konvention
-#: wie Kala und Parashara's Light. (Eine zwischenzeitliche Variante, die die
-#: temporäre Ebene schwächer gewichtete, ist zurückgenommen: Der gemeldete
-#: Fall — Mars bei der Sonne im Löwen — löst sich bereits über die
-#: Konjunktionsregel in _TATKALIKA_FRIEND, ohne von Kala abzuweichen.)
+#: die klassische Pañcadhā Maitrī, beide Ebenen gleich gewichtet, nach
+#: Parashara. Keine Sonderregeln: weder eine schwächere Gewichtung der
+#: temporären Ebene noch eine Sonderbehandlung der Konjunktion.
 _COMPOUND_DIGNITY = {
     ("friend", "friend"):  "Great Friend's Sign",
     ("friend", "enemy"):   "Neutral Sign",
