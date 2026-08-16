@@ -346,7 +346,10 @@ def form_html(session_id: str, info: dict) -> str:
 <input name="q1" placeholder="Frage 1 — z.B. Soll ich mich beruflich verändern?" style="margin-bottom:8px">
 <input name="q2" placeholder="Frage 2 (optional)" style="margin-bottom:8px">
 <input name="q3" placeholder="Frage 3 (optional)">
-<p class="muted" style="font-size:.8rem;margin-top:8px">Damit deine Fragen Raum bekommen, fallen die allgemeinen Kapitel zu Beruf (D10), Geschwistern (D3), Heim (D4) und Beziehung (D9) etwas kompakter aus. Weitere Fragen kannst du später jederzeit als bezahlte Zusatzfrage stellen.</p>
+<label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:12px 0 0">
+<input type="checkbox" name="q_health" value="1" style="width:auto;margin-top:3px">
+<span style="font-size:.82rem;color:{PAL['muted']}">Eine meiner Fragen betrifft die Gesundheit — dann fliesst die Konstitutionsanalyse mit ein und benennt die belasteten Bereiche. Keine Diagnose, kein ärztlicher Rat.</span></label>
+<p class="muted" style="font-size:.8rem;margin-top:8px">Damit deine Fragen Raum bekommen, fallen die allgemeinen Kapitel zu Beruf, Geschwistern, Heim und Beziehung etwas kompakter aus. Weitere Fragen kannst du später jederzeit als bezahlte Zusatzfrage stellen.</p>
 </div>"""
     else:
         questions_block = ""
@@ -475,7 +478,8 @@ def generate(request: Request,
              lang: str = Form("de"), depth: str = Form(""),
              gender: str = Form(""), occupation: str = Form(""), context: str = Form(""),
              b_day: str = Form(""), b_month: str = Form(""), b_year: str = Form(""),
-             q1: str = Form(""), q2: str = Form(""), q3: str = Form("")):
+             q1: str = Form(""), q2: str = Form(""), q3: str = Form(""),
+             q_health: str = Form("")):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
         return HTMLResponse(msg_html("Zu viele Anfragen",
                             "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
@@ -526,6 +530,9 @@ def generate(request: Request,
         _qs = [q.strip() for q in (q1, q2, q3) if q and q.strip()][:3]
         if _qs and info.get("depth") == "premium":
             chart["meta"]["questions"] = _qs
+            # Ankreuzfeld: schaltet die Konstitutionsdaten für die Antwort frei
+            # (ai_report). Ohne Häkchen greift nur die Stichworterkennung.
+            chart["meta"]["health_question"] = bool(q_health)
         # Lebensspannen-Checkliste im Medizin-Tab: NUR im Test-Modus (Betreiber),
         # niemals in bezahlten Kundenberichten.
         chart["show_lifespan"] = bool(info.get("test"))
@@ -795,6 +802,9 @@ enthält die Antwort. Stelle deine Frage aufrichtig — der Moment zählt.</p>
 <input type="hidden" name="session_id" value="{escape(session_id)}">
 <label>Deine Frage</label>
 <input name="question" placeholder="z.B. Werde ich die Stelle bekommen?" required>
+<label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:10px 0 0">
+<input type="checkbox" name="q_health" value="1" style="width:auto;margin-top:3px">
+<span style="font-size:.82rem;color:{PAL['muted']}">Meine Frage betrifft die Gesundheit — dann fliesst die Konstitutionsanalyse mit ein und benennt die belasteten Bereiche. Keine Diagnose, kein ärztlicher Rat.</span></label>
 <label>Name (optional)</label><input name="name" value="">
 <label>Ort der Frage (Stadt, Land)</label>
 <input name="city" placeholder="z.B. Zürich, Schweiz" required>
@@ -875,6 +885,7 @@ def prasna_generate(
     birth_time: str = Form(""),
     birth_city: str = Form(""),
     bb_day: str = Form(""), bb_month: str = Form(""), bb_year: str = Form(""),
+    q_health: str = Form(""),
 ):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
         return HTMLResponse(msg_html("Zu viele Anfragen",
@@ -914,6 +925,7 @@ def prasna_generate(
         chart["meta"]["context"] = context.strip()
         chart["prasna_question"] = question
         chart["prasna_mode"] = True
+        chart["meta"]["health_question"] = bool(q_health)
 
         # ── Prāśna Plus: optionaler Abgleich mit dem Geburtshoroskop ────────
         if bb_day.strip() and bb_month.strip() and bb_year.strip():
@@ -1253,6 +1265,9 @@ mit Blick auf die passenden Häuser, Kārakas und deine aktuelle Daśā-Zeit.</p
 <input type="hidden" name="ref" value="{escape(anchor, quote=True)}">
 <label>Deine Frage</label>
 <input name="question" placeholder="z.B. Soll ich das Stellenangebot annehmen?" required>
+<label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:12px 0 0">
+<input type="checkbox" name="q_health" value="1" style="width:auto;margin-top:3px">
+<span style="font-size:.82rem;color:{PAL['muted']}">Meine Frage betrifft die Gesundheit — dann fliesst die Konstitutionsanalyse mit ein und benennt die belasteten Bereiche. Keine Diagnose, kein ärztlicher Rat.</span></label>
 <div><label>Sprache</label><select name="lang">
   <option value="de">Deutsch</option><option value="en">English</option>
 </select></div>
@@ -1263,7 +1278,8 @@ mit Blick auf die passenden Häuser, Kārakas und deine aktuelle Daśā-Zeit.</p
 @app.post("/report-frage-generate", response_class=HTMLResponse)
 def report_frage_generate(request: Request,
                           session_id: str = Form(...), ref: str = Form(...),
-                          question: str = Form(...), lang: str = Form("de")):
+                          question: str = Form(...), lang: str = Form("de"),
+                          q_health: str = Form("")):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
         return HTMLResponse(msg_html("Zu viele Anfragen",
                             "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
@@ -1291,6 +1307,7 @@ def report_frage_generate(request: Request,
         if "/" in str(params.get("iana", "")):
             chart["meta"]["tzname"] = params["iana"]
         chart["meta"]["questions"] = [question.strip()]
+        chart["meta"]["health_question"] = bool(q_health)
         text = ai_report.generate_interpretation(chart, lang=lang, depth="frage")
         title = ("Zusatzfrage zu deinem Bericht" if lang == "de"
                  else "Follow-up question to your report")
@@ -1346,6 +1363,9 @@ ursprünglichen Frage:</p>
 <input type="hidden" name="ref" value="{escape(anchor, quote=True)}">
 <label>Deine Vertiefungsfrage</label>
 <input name="question" placeholder="z.B. Und wie entwickelt es sich finanziell?" required>
+<label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:10px 0 0">
+<input type="checkbox" name="q_health" value="1" style="width:auto;margin-top:3px">
+<span style="font-size:.82rem;color:{PAL['muted']}">Meine Frage betrifft die Gesundheit — dann fliesst die Konstitutionsanalyse mit ein und benennt die belasteten Bereiche. Keine Diagnose, kein ärztlicher Rat.</span></label>
 <div><label>Sprache</label><select name="lang">
   <option value="de">Deutsch</option><option value="en">English</option>
 </select></div>
@@ -1356,7 +1376,8 @@ ursprünglichen Frage:</p>
 @app.post("/prasna-followup-generate", response_class=HTMLResponse)
 def prasna_followup_generate(request: Request,
                              session_id: str = Form(...), ref: str = Form(...),
-                             question: str = Form(...), lang: str = Form("de")):
+                             question: str = Form(...), lang: str = Form("de"),
+                             q_health: str = Form("")):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
         return HTMLResponse(msg_html("Zu viele Anfragen",
                             "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
@@ -1386,6 +1407,7 @@ def prasna_followup_generate(request: Request,
         chart["prasna_question"] = question.strip()
         chart["prasna_mode"] = True
         chart["prasna_followup_of"] = params.get("question", "")
+        chart["meta"]["health_question"] = bool(q_health)
         if params.get("birth_date") and params.get("birth_city"):
             jc, _err = _build_janma_context(
                 params["birth_date"], params.get("birth_time", ""),

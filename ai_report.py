@@ -657,7 +657,12 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
         "lifespan", "life expectancy", "longevity", "how long will i live",
         "when will i die",
     )
-    _asks_health = any(w in _ql for w in _HEALTH_WORDS)
+    # Das Formular-Kästchen ist massgeblich; die Stichwörter fangen jene auf,
+    # die es nicht ankreuzen. Langlebigkeit bleibt bewusst stichwortgebunden —
+    # ein allgemeines Gesundheits-Häkchen schaltet sie NICHT frei, dafür muss
+    # der Kunde ausdrücklich danach fragen.
+    _flag = bool((chart.get("meta") or {}).get("health_question"))
+    _asks_health = _flag or any(w in _ql for w in _HEALTH_WORDS)
     _asks_lifespan = any(w in _ql for w in _LIFE_WORDS)
     if _asks_health or _asks_lifespan:
         try:
