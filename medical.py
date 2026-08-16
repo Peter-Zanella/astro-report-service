@@ -173,12 +173,23 @@ def _deg_in_sign(pls: Dict, p: str) -> float:
     return (lon % 30.0) if lon is not None else -99.0
 
 
+#: Knoten ohne 7. Aspekt — siehe _aspected_houses
+_NO_SEVENTH = ("Rahu", "Ketu")
+
+
 def _aspected_houses(p: str, h: int) -> List[int]:
-    """Häuser, die Planet p aus Haus h per Graha-Drishti aspektiert
-    (7. für alle; Sonderaspekte für Ma/Ju/Sa/Ra/Ke wie im astro_engine)."""
+    """Häuser, die Planet p aus Haus h per Graha-Drishti aspektiert.
+
+    Der 7. Aspekt gilt für alle Grahas AUSSER Rāhu und Ketu: Für die Knoten
+    werden in der medizinischen Auswertung nur die Sonderaspekte (5./9.)
+    gewertet, weil ihr Gegenschein-Aspekt in den Klassikern umstritten ist und
+    bei der Melothesie sonst jede Knotenachse zwei Körperregionen zugleich
+    belastet. Ausserhalb dieses Moduls bleibt die Engine-Konvention
+    (7. Aspekt für alle) unverändert.
+    """
     if not h:
         return []
-    out = [((h + 5) % 12) + 1]                       # 7. Haus
+    out = [] if p in _NO_SEVENTH else [((h + 5) % 12) + 1]   # 7. Haus
     for off in _SPECIAL_ASPECTS.get(p, []):
         out.append(((h + off - 2) % 12) + 1)
     return out
