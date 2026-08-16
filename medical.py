@@ -291,8 +291,14 @@ def compute_doshas(chart: Dict) -> Dict:
     primary, secondary = ranked[0][0], ranked[1][0]
     if ranked[1][1] <= 0:
         secondary = None
+    # Punktgleichstand an der Spitze: Die Reihenfolge im sorted() wäre dann
+    # reiner Zufall der Dict-Ordnung und keine Aussage. Ayurvedisch ist die
+    # Doppelkonstitution ohnehin die übliche Lesart — beide gleichrangig.
+    dual = bool(secondary) and ranked[0][1] == ranked[1][1] and ranked[0][1] > 0
+    label = f"{primary}-{secondary}" if dual else primary
     return {"scores": {k: round(v, 1) for k, v in score.items()},
             "primary": primary, "secondary": secondary,
+            "dual": dual, "label": label,
             "moon_state": moon_state, "derivation": lines}
 
 
@@ -871,27 +877,41 @@ def render_tab(chart: Dict) -> str:
 
     # ── Konstitution ──────────────────────────────────────────────────────
     prim, sec = d["primary"], d["secondary"]
+    # Bei Punktgleichstand keine Rangfolge behaupten — beide gleichrangig
+    # ausweisen und die zweite Karte optisch der ersten angleichen.
+    _dual = bool(d.get("dual"))
+    _lbl1 = "Gleichrangig" if _dual else "Prim&auml;r"
+    _lbl2 = "Gleichrangig" if _dual else "Sekund&auml;r"
     prof = DOSHA_PROFILE[prim]
     dosha_cards = (
         f"<div style='display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 4px'>"
         f"<div style='flex:1;min-width:240px;border:1px solid var(--ac);"
         f"border-radius:10px;padding:14px 16px'>"
         f"<div style='color:var(--ac);font-size:1.05rem;font-weight:600'>"
-        f"Prim&auml;r: {prim}</div>"
+        f"{_lbl1}: {prim}</div>"
         f"<div style='color:var(--mu);font-size:.8rem;margin:2px 0 8px'>{prof[0]}</div>"
         f"<div style='font-size:.86rem;line-height:1.5'>{prof[1]}</div>"
         f"<div style='font-size:.82rem;line-height:1.5;color:var(--mu);"
         f"margin-top:8px'>{prof[2]}</div></div>")
     if sec:
         sprof = DOSHA_PROFILE[sec]
+        _border = "var(--ac)" if _dual else "rgba(255,255,255,.14)"
+        _head = "color:var(--ac);" if _dual else ""
         dosha_cards += (
             f"<div style='flex:1;min-width:240px;border:1px solid "
-            f"rgba(255,255,255,.14);border-radius:10px;padding:14px 16px'>"
-            f"<div style='font-size:1.0rem;font-weight:600'>Sekund&auml;r: {sec}</div>"
+            f"{_border};border-radius:10px;padding:14px 16px'>"
+            f"<div style='{_head}font-size:1.0rem;font-weight:600'>{_lbl2}: {sec}</div>"
             f"<div style='color:var(--mu);font-size:.8rem;margin:2px 0 8px'>{sprof[0]}</div>"
             f"<div style='font-size:.84rem;line-height:1.5;color:var(--mu)'>{sprof[1]}</div>"
             f"</div>")
     dosha_cards += "</div>"
+    if _dual:
+        dosha_cards += (
+            f"<p style='color:var(--mu);font-size:.84rem;margin:6px 0 0'>"
+            f"Beide Doshas erreichen gleich viele Punkte — eine "
+            f"<strong>{d.get('label', '')}-Konstitution</strong>. Ayurvedisch "
+            f"ist eine solche Doppelkonstitution der Normalfall, keine "
+            f"Unklarheit: Beide Prinzipien pr&auml;gen gleichermassen.</p>")
 
     deriv = "".join(
         f"<tr><td style='white-space:nowrap'>{lbl}</td><td>{txt}</td></tr>"

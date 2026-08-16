@@ -680,10 +680,17 @@ def build_facts(chart: Dict, depth: str = "premium") -> str:
                             "Belastungsschwerpunkte sind KEINE Diagnose: nenne "
                             "die kritischen Bereiche, niemals ein "
                             "Krankheitsbild und keinen konkreten Rat."),
-                "dosha": {"primaer": _dosh.get("primary"),
+                "dosha": {"konstitution": _dosh.get("label"),
+                          "primaer": _dosh.get("primary"),
                           "sekundaer": _dosh.get("secondary"),
+                          "gleichrangig": bool(_dosh.get("dual")),
                           "mond": _dosh.get("moon_state"),
-                          "punkte": _dosh.get("scores")},
+                          "punkte": _dosh.get("scores"),
+                          "HINWEIS_GLEICHSTAND": (
+                              "Ist 'gleichrangig' true, haben beide Doshas "
+                              "gleich viele Punkte: Sprich dann von einer "
+                              "Doppelkonstitution (z.B. 'Vata-Pitta') und "
+                              "behaupte KEINE Rangfolge zwischen ihnen.")},
                 "guna": {"dominant": _gun.get("dominant"),
                          "schwach": _gun.get("low"),
                          "verteilung": _gun.get("counts")},
