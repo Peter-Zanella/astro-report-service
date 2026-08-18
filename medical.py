@@ -6,7 +6,8 @@ Prinzip unverändert: astro_engine ist die alleinige Quelle aller Positionen.
 Dieses Modul LEITET daraus ab (keine Ephemeriden-Rechnung):
 
   1. Körperliche Konstitution (Doshas) — Methodik:
-     Planeteneinflüsse auf Lagna (primär), auf das 6. Haus und auf den Mond
+     Planeteneinflüsse auf Lagna, 6. Haus und Mond — alle drei gleich
+     gewichtet
      (hell = Kapha / dunkel = Vata; Planeteneinflüsse dominieren). Das
      Lagna-ZEICHEN zählt nur, wenn gar keine Planeteneinflüsse vorliegen.
   2. Mentale Konstitution (Gunas) — über die Nakshatra-Herrscher von Lagna
@@ -242,21 +243,26 @@ def compute_doshas(chart: Dict) -> Dict:
     score = {"Vata": 0.0, "Pitta": 0.0, "Kapha": 0.0}
     lines: List[Tuple[str, str]] = []
 
-    # (1) Lagna — primäre Gewichtung (×2). Zeichen NUR als Fallback.
+    # (1) Lagna — gleiches Gewicht wie 6. Haus und Mond (Faktor 1).
+    # Früher ×2: Das war eine undokumentierte Implementierungsentscheidung —
+    # die Klassiker nennen das Lagna "primär", quantifizieren das aber nicht.
+    # Mit ×2 liess sich das Lagna von 6. Haus und Mond zusammen nie
+    # überstimmen (2 gegen 1+1), sondern höchstens einholen; alle drei Ebenen
+    # wiegen jetzt gleich. Zeichen NUR als Fallback.
     lag_infl = _influences_on_house(chart, 1)
     if lag_infl:
         parts = []
         for p in lag_infl:
             v = _dosha_vote(p, moon_state)
             if v:
-                score[v[0]] += v[1] * 2.0
+                score[v[0]] += v[1]
                 parts.append(f"{DE.get(p, p)} → {v[0]}")
-        lines.append(("Lagna (primär)", ", ".join(parts) if parts else "—"))
+        lines.append(("Lagna", ", ".join(parts) if parts else "—"))
     else:
         sign = chart.get("lagna")
         d = ELEMENT_DOSHA.get(sign, "Vata")
-        score[d] += 2.0
-        lines.append(("Lagna (primär)",
+        score[d] += 1.0
+        lines.append(("Lagna",
                       f"keine Planeteneinflüsse — Zeichen {SIGN_DE.get(sign, sign)} → {d}"))
 
     # (2) 6. Haus
@@ -293,12 +299,17 @@ def compute_doshas(chart: Dict) -> Dict:
         secondary = None
     # Punktgleichstand an der Spitze: Die Reihenfolge im sorted() wäre dann
     # reiner Zufall der Dict-Ordnung und keine Aussage. Ayurvedisch ist die
-    # Doppelkonstitution ohnehin die übliche Lesart — beide gleichrangig.
-    dual = bool(secondary) and ranked[0][1] == ranked[1][1] and ranked[0][1] > 0
-    label = f"{primary}-{secondary}" if dual else primary
+    # Doppelkonstitution ohnehin die übliche Lesart — alle gleichrangig.
+    # Seit alle drei Prüfebenen gleich wiegen, kann auch ein Dreier-Gleichstand
+    # auftreten (sama doṣa / tridoshisch); 'tied' fasst darum ALLE Punktgleichen
+    # an der Spitze, nicht nur die obersten zwei.
+    top = ranked[0][1]
+    tied = [k for k, v in ranked if v == top and v > 0]
+    dual = len(tied) > 1
+    label = "-".join(tied) if dual else primary
     return {"scores": {k: round(v, 1) for k, v in score.items()},
             "primary": primary, "secondary": secondary,
-            "dual": dual, "label": label,
+            "tied": tied, "dual": dual, "label": label,
             "moon_state": moon_state, "derivation": lines}
 
 
@@ -877,9 +888,10 @@ def render_tab(chart: Dict) -> str:
 
     # ── Konstitution ──────────────────────────────────────────────────────
     prim, sec = d["primary"], d["secondary"]
-    # Bei Punktgleichstand keine Rangfolge behaupten — beide gleichrangig
-    # ausweisen und die zweite Karte optisch der ersten angleichen.
+    # Bei Punktgleichstand keine Rangfolge behaupten — alle Gleichrangigen
+    # ausweisen und ihre Karten optisch angleichen.
     _dual = bool(d.get("dual"))
+    _tied = d.get("tied") or []
     _lbl1 = "Gleichrangig" if _dual else "Prim&auml;r"
     _lbl2 = "Gleichrangig" if _dual else "Sekund&auml;r"
     prof = DOSHA_PROFILE[prim]
@@ -904,11 +916,22 @@ def render_tab(chart: Dict) -> str:
             f"<div style='color:var(--mu);font-size:.8rem;margin:2px 0 8px'>{sprof[0]}</div>"
             f"<div style='font-size:.84rem;line-height:1.5;color:var(--mu)'>{sprof[1]}</div>"
             f"</div>")
+    for _extra in [t for t in _tied if t not in (prim, sec)]:
+        _eprof = DOSHA_PROFILE[_extra]
+        dosha_cards += (
+            f"<div style='flex:1;min-width:240px;border:1px solid var(--ac);"
+            f"border-radius:10px;padding:14px 16px'>"
+            f"<div style='color:var(--ac);font-size:1.0rem;font-weight:600'>"
+            f"Gleichrangig: {_extra}</div>"
+            f"<div style='color:var(--mu);font-size:.8rem;margin:2px 0 8px'>{_eprof[0]}</div>"
+            f"<div style='font-size:.84rem;line-height:1.5;color:var(--mu)'>{_eprof[1]}</div>"
+            f"</div>")
     dosha_cards += "</div>"
     if _dual:
         dosha_cards += (
             f"<p style='color:var(--mu);font-size:.84rem;margin:6px 0 0'>"
-            f"Beide Doshas erreichen gleich viele Punkte — eine "
+            f"{'Alle drei' if len(_tied) > 2 else 'Beide'} Doshas erreichen "
+            f"gleich viele Punkte — eine "
             f"<strong>{d.get('label', '')}-Konstitution</strong>. Ayurvedisch "
             f"ist eine solche Doppelkonstitution der Normalfall, keine "
             f"Unklarheit: Beide Prinzipien pr&auml;gen gleichermassen.</p>")
