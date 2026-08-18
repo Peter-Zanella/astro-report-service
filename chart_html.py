@@ -430,6 +430,25 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
                 s=str(ad.get('start',''))[:10]; e=str(ad.get('end',''))[:10]
                 antar_rows+=f"<tr class='{cls}'><td>{md.get('planet','')}/{ad.get('planet','')}{now}</td><td>{s}</td><td>{e}</td></tr>"
 
+    # Pratyantardaśās der AKTIVEN Antardaśā — die dritte Ebene. Alle 81 zu
+    # zeigen wäre Rauschen; die neun der laufenden Antardaśā sind die, die
+    # das aktuelle Timing tatsächlich gliedern.
+    prat_rows=""
+    for md in dashas.get("mahadashas",[]):
+        if not md.get("active"): continue
+        for ad in md.get("antardashas",[]):
+            if not ad.get("active"): continue
+            for pd_ in ad.get("pratyantardashas",[]):
+                a=pd_.get("active",False)
+                cls=" act" if a else ""
+                now=" (now)" if a else ""
+                s_=str(pd_.get('start',''))[:10]; e_=str(pd_.get('end',''))[:10]
+                prat_rows+=(f"<tr class='{cls}'><td>{md.get('planet','')}/"
+                            f"{ad.get('planet','')}/{pd_.get('planet','')}{now}</td>"
+                            f"<td>{s_}</td><td>{e_}</td></tr>")
+    if not prat_rows:
+        prat_rows="<tr><td colspan='3' style='color:var(--mu)'>keine laufende Antardaśā</td></tr>"
+
     # ── Chara Dasha ───────────────────────────────────────────────────────────
     chara=chart.get("chara_dasha",{})
     chara_cur=chara.get("current",{})
@@ -1079,6 +1098,11 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <div class="ow"><table class="dt">
     <thead><tr><th>Maha / Antar</th><th>Start</th><th>End</th></tr></thead>
     <tbody>{antar_rows}</tbody>
+  </table></div>
+  <p class="sh">Pratyantardaśās (aktive Antardaśā)</p>
+  <div class="ow"><table class="dt">
+    <thead><tr><th>Maha / Antar / Pratyantar</th><th>Start</th><th>End</th></tr></thead>
+    <tbody>{prat_rows}</tbody>
   </table></div>
 </div>
 
