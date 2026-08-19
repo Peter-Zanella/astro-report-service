@@ -243,12 +243,8 @@ def compute_doshas(chart: Dict) -> Dict:
     score = {"Vata": 0.0, "Pitta": 0.0, "Kapha": 0.0}
     lines: List[Tuple[str, str]] = []
 
-    # (1) Lagna — gleiches Gewicht wie 6. Haus und Mond (Faktor 1).
-    # Früher ×2: Das war eine undokumentierte Implementierungsentscheidung —
-    # die Klassiker nennen das Lagna "primär", quantifizieren das aber nicht.
-    # Mit ×2 liess sich das Lagna von 6. Haus und Mond zusammen nie
-    # überstimmen (2 gegen 1+1), sondern höchstens einholen; alle drei Ebenen
-    # wiegen jetzt gleich. Zeichen NUR als Fallback.
+    # (1) Lagna — gleiches Gewicht wie 6. Haus und Mond.
+    # Zeichen NUR als Fallback, wenn kein Planet auf das Lagna einwirkt.
     lag_infl = _influences_on_house(chart, 1)
     if lag_infl:
         parts = []
@@ -945,8 +941,9 @@ def render_tab(chart: Dict) -> str:
         f"<div class='ow'><table class='dt'><thead><tr><th>Ebene</th>"
         f"<th>Einfl&uuml;sse &rarr; Dosha</th></tr></thead><tbody>{deriv}"
         f"<tr><td><strong>Gewichtung</strong></td><td>Vata {sc['Vata']} &middot; "
-        f"Pitta {sc['Pitta']} &middot; Kapha {sc['Kapha']} &mdash; Lagna doppelt "
-        f"gewichtet; das Lagna-Zeichen z&auml;hlt nur ohne Planeteneinfl&uuml;sse."
+        f"Pitta {sc['Pitta']} &middot; Kapha {sc['Kapha']} &mdash; Lagna, 6. Haus "
+        f"und Mond gleich gewichtet; das Lagna-Zeichen z&auml;hlt nur ohne "
+        f"Planeteneinfl&uuml;sse."
         f"</td></tr></tbody></table></div>")
 
     # ── Gunas ─────────────────────────────────────────────────────────────
