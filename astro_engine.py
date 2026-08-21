@@ -1207,7 +1207,13 @@ def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
 
     today = datetime.now()
     mahas, cur, total, idx, current = [], birth_dt, 0.0, 0, None
-    while total < span_years:
+    # Chara Daśā ist zyklisch: Nach allen zwölf Zeichen beginnt die Folge
+    # erneut. span_years allein deckte nur Geburten der letzten 120 Jahre —
+    # bei älteren Daten (z.B. 1848) endete die Zeitleiste vor heute, keine
+    # Periode war aktiv und 'current' blieb None, wie zuvor bei Viṃśottarī.
+    # Erzeugt wird daher mindestens span_years und darüber hinaus so lange,
+    # bis der heutige Tag überdeckt ist (Deckel: 240 Perioden = 20 Zyklen).
+    while (total < span_years or cur <= today) and idx < 240:
         si = order[idx % 12]
         yrs = durations[si]
         end = cur + timedelta(days=yrs * 365.25)
