@@ -1686,12 +1686,24 @@ def compute_yogas(planets: Dict, lagna_idx: int) -> List[Dict]:
         add("Amala Yoga", "Other", amala_l, "Benefic in the 10th from the Lagna - lasting repute.")
     elif amala_m:
         add("Amala Yoga", "Other", amala_m, "Benefic in the 10th from the Moon.")
+    # Neecha Bhanga — Aufhebung der Debilitation. Klassisch gibt es mehrere
+    # Auslöser; geprüft werden zwei:
+    #   (a) der Zeichenherr steht in einem Kendra vom Lagna,
+    #   (b) der Zeichenherr steht IM SELBEN ZEICHEN, ist dem debilitierten
+    #       Planeten also beigesellt (z.B. Venus nīca in Jungfrau zusammen
+    #       mit Merkur). Fall (b) wurde vorher nur zufällig erkannt — nämlich
+    #       dann, wenn dieses Zeichen gerade ein Kendra war.
     for p in PLANET_ORDER:
         if DEBIL_SIGN.get(p) == si[p]:
             sl = SIGN_LORDS[SIGNS[si[p]]]
+            why = []
+            if si.get(sl) == si[p]:
+                why.append(f"its sign-lord {sl} is with it in the same sign")
             if hs.get(sl) in (1, 4, 7, 10):
+                why.append(f"its sign-lord {sl} sits in a kendra")
+            if why:
                 add("Neecha Bhanga Raja Yoga", "Other", [p, sl],
-                    f"{p} is debilitated, but its sign-lord {sl} sits in a kendra - "
+                    f"{p} is debilitated, but {' and '.join(why)} - "
                     "debilitation is cancelled.")
 
     # Lakshmi - 9th lord strong (own/exalted) in a kendra/trikona, with a strong Lagna lord
