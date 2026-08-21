@@ -873,7 +873,19 @@ def build_dashas(moon_sid:float, birth_dt:datetime) -> Dict:
     cur_maha=cur_antar=cur_pad=None
     mahas=[]; maha_curr=birth_dt
 
-    for i in range(9):
+    # Viṃśottarī ist zyklisch: Nach 120 Jahren beginnt dieselbe Folge erneut.
+    # Ein einziger Zyklus reichte nur für Geburten der letzten 120 Jahre —
+    # bei älteren Daten (z.B. 1848) endete die Zeitleiste vor heute, keine
+    # Periode war aktiv und 'current' blieb komplett leer. Es werden deshalb
+    # so viele Zyklen erzeugt, wie nötig sind, um den heutigen Tag zu
+    # überdecken (Deckel bei 5 Zyklen = 600 Jahre gegen Endlosschleifen).
+    _first_full=DASHA_YEARS[lord]
+    cycles=1
+    while cycles<5 and birth_dt+timedelta(
+            days=(cycles*DASHA_TOTAL-frac_done*_first_full)*365.25)<=today:
+        cycles+=1
+
+    for i in range(9*cycles):
         maha=DASHA_ORDER[(start_idx+i)%9]; full_yrs=DASHA_YEARS[maha]
         maha_yrs=full_yrs*(1-frac_done if i==0 else 1.0)
         maha_end=maha_curr+timedelta(days=maha_yrs*365.25)
