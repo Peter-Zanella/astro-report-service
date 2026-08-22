@@ -1215,12 +1215,17 @@ def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
       seq_pada — Richtung der Daśā-FOLGE, bestimmt aus dem Lagna-Zeichen.
       dur_pada — Richtung der DAUER-Zählung, je Zeichen zu seinem Herrn.
 
-    Sie waren früher an ein gemeinsames Flag gekoppelt. Kala kombiniert sie
-    verschieden: Dauern nach der Pada-Regel, Folge nach der Zeichennummer.
-    Das ist empirisch aus dem Abgleich mit Kala bestimmt, nicht aus einem
-    Text belegt.
+    Die Folge richtet sich klassisch nach dem **9. Zeichen vom Lagna**, nicht
+    nach dem Lagna selbst (Jaimini / K.N. Rao). Bei Skorpion-Lagna ist das
+    Krebs; Krebs gehört zur rückwärts laufenden Gruppe, also läuft die ganze
+    Sequenz rückwärts: Skorpion → Waage → Jungfrau → Löwe → Krebs → …
+    Diese 9.-Zeichen-Regel gilt AUSDRÜCKLICH NICHT für die Jahresdauern.
+
+    Hinweis zur Zeichennummer-Gruppierung: Das 9. Zeichen hat immer dieselbe
+    Parität wie das Lagna (+8 Positionen), dort ändert die Regel also nichts.
+    Wirksam wird sie erst mit der Pada-Gruppierung.
     """
-    direct = _chara_odd(lagna_si, seq_pada)
+    direct = _chara_odd((lagna_si + 8) % 12, seq_pada)
     order = [((lagna_si + i) % 12 if direct else (lagna_si - i) % 12) for i in range(12)]
 
     durations, colords = {}, {}
@@ -2347,7 +2352,7 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
     # Massgeblich ist die PADA-Regel (Jaimini-Sūtra-Tradition, wie Kala) —
     # sie speist Tab und Deutung.
     chara_dasha = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
-                                    seq_pada=False, dur_pada=True)
+                                    seq_pada=True, dur_pada=True)
     # Zweite Schule nur zum Vergleich (durchgehend Zeichennummer, K.N. Rao).
     # Reine Anzeige, erreicht keinen Faktenblock.
     chara_dasha_alt = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,

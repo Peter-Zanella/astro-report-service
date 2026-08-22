@@ -1148,11 +1148,12 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <p style="color:var(--mu);font-size:.88rem;line-height:1.55">
   Die Dauer eines Zeichens ist der Abstand zu seinem Herrn, minus 1. Die
   <strong>Zählrichtung</strong> wird in zwei Schulen verschieden bestimmt, und
-  sie unterscheiden sich in genau den vier fixen Zeichen. Dabei sind es
-  <em>zwei</em> Entscheidungen: die Richtung der Daśā-<strong>Folge</strong>
-  (aus dem Lagna-Zeichen) und die Richtung der <strong>Dauer</strong>-Zählung
-  (je Zeichen zu seinem Herrn). AstroVeda folgt hier der Software Kala —
-  Dauern nach der Pada-Regel, Folge nach der Zeichennummer.</p>
+  sie unterscheiden sich in genau den vier fixen Zeichen. Die Richtung wird
+  an <em>zwei</em> Stellen gebraucht: für die Daśā-<strong>Folge</strong> und
+  für die <strong>Dauer</strong>-Zählung je Zeichen zu seinem Herrn. Für die
+  Folge ist dabei nicht das Lagna massgeblich, sondern das <strong>9. Zeichen
+  vom Lagna</strong> — bei Skorpion-Lagna also Krebs, das rückwärts läuft.
+  Diese 9.-Zeichen-Regel gilt ausdrücklich <em>nicht</em> für die Dauern.</p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Rāśi</th><th>Start</th><th>End</th><th>Years</th></tr></thead>
     <tbody>{chara_rows}</tbody>
@@ -1167,15 +1168,12 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <p style="color:var(--mu);font-size:.88rem;line-height:1.55">
   <strong>Pada-Regel</strong>: ungeradefüssige Zeichen — Widder, Stier,
   Zwillinge, Waage, Skorpion, Schütze — werden direkt gezählt
-  (Jaimini-Sūtra-Tradition nach Sanjay Rath). Danach richten sich hier die
-  <strong>Dauern</strong>.<br>
+  (Jaimini-Sūtra-Tradition). Ihr folgen hier Folge <em>und</em> Dauern.<br>
   <strong>Zeichennummer-Regel</strong> (K.N. Rao): ungerade Zeichen — Widder,
-  Zwillinge, Löwe, Waage, Schütze, Wassermann — werden direkt gezählt. Danach
-  richtet sich hier die <strong>Folge</strong> der Zeichen.<br>
-  Die Tabelle unten stellt beide Dauern gegenüber; die Folge ist in beiden
-  Zeitleisten dieselbe. Laufendes Zeichen: <strong>{chara_cur}</strong> mit
-  den Pada-Dauern, <strong>{chara_cur_pada}</strong> mit den
-  Zeichennummer-Dauern.</p>
+  Zwillinge, Löwe, Waage, Schütze, Wassermann — werden direkt gezählt.<br>
+  Die Tabelle unten stellt beide Dauern gegenüber. Laufendes Zeichen:
+  <strong>{chara_cur}</strong> nach der Pada-Regel,
+  <strong>{chara_cur_pada}</strong> nach der Zeichennummer-Regel.</p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Rāśi</th><th>Pada</th><th>Zeichennummer</th><th></th></tr></thead>
     <tbody>{chara_cmp_rows}</tbody>
