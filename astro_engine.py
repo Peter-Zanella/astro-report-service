@@ -1209,13 +1209,23 @@ def _chara_antardashas(maha_si: int, maha_years: float, start_dt: datetime,
 
 def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
                       lagna_si: int, birth_dt: datetime, span_years: float = 120.0,
-                      pada: bool = False) -> Dict:
-    direct = _chara_odd(lagna_si, pada)
+                      seq_pada: bool = False, dur_pada: bool = False) -> Dict:
+    """Chara Daśā. Zwei UNABHÄNGIGE Richtungsentscheidungen:
+
+      seq_pada — Richtung der Daśā-FOLGE, bestimmt aus dem Lagna-Zeichen.
+      dur_pada — Richtung der DAUER-Zählung, je Zeichen zu seinem Herrn.
+
+    Sie waren früher an ein gemeinsames Flag gekoppelt. Kala kombiniert sie
+    verschieden: Dauern nach der Pada-Regel, Folge nach der Zeichennummer.
+    Das ist empirisch aus dem Abgleich mit Kala bestimmt, nicht aus einem
+    Text belegt.
+    """
+    direct = _chara_odd(lagna_si, seq_pada)
     order = [((lagna_si + i) % 12 if direct else (lagna_si - i) % 12) for i in range(12)]
 
     durations, colords = {}, {}
     for si in range(12):
-        yrs, lord, reason = _chara_years(si, planet_signs, lons, pada)
+        yrs, lord, reason = _chara_years(si, planet_signs, lons, dur_pada)
         durations[si] = yrs
         if SIGNS[si] in ("Scorpio", "Aquarius"):
             colords[SIGNS[si]] = {"lord": lord, "reason": reason}
@@ -1241,7 +1251,8 @@ def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
         cur = end; total += yrs; idx += 1
 
     return {"mahadashas": mahas, "current": current,
-            "convention": "pada" if pada else "sign-number",
+            "convention": {"sequence": "pada" if seq_pada else "sign-number",
+                           "duration": "pada" if dur_pada else "sign-number"},
             "direction": "direct (zodiacal)" if direct else "reverse",
             "durations": {SIGNS[si]: durations[si] for si in range(12)},
             "colords": colords}
@@ -2336,11 +2347,11 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
     # Massgeblich ist die PADA-Regel (Jaimini-Sūtra-Tradition, wie Kala) —
     # sie speist Tab und Deutung.
     chara_dasha = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
-                                    pada=True)
-    # Zweite Schule nur zum Vergleich (Zeichennummer-Regel, K.N. Rao).
+                                    seq_pada=False, dur_pada=True)
+    # Zweite Schule nur zum Vergleich (durchgehend Zeichennummer, K.N. Rao).
     # Reine Anzeige, erreicht keinen Faktenblock.
     chara_dasha_alt = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
-                                        pada=False)
+                                        seq_pada=False, dur_pada=False)
 
     panchang = compute_panchang(lons["Sun"], lons["Moon"], local_dt.isoweekday() % 7,
                                 planets["Moon"]["nakshatra"], planets["Moon"]["nak_lord"])
