@@ -1108,9 +1108,23 @@ def compute_jaimini(lons: Dict[str, float], lagna_si: int) -> Dict:
 #    moving in that sign's own direction (its odd/even nature).
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _chara_odd(si: int) -> bool:
-    """Odd sign? Aries, Gemini, Leo, Libra, Sagittarius, Aquarius (0-based even index)."""
-    return si % 2 == 0
+#: Ungeradefüssige (viṣama-pada) Zeichen — Grundlage der Jaimini-Konvention.
+_ODD_FOOTED = {0, 1, 2, 6, 7, 8}   # Widder, Stier, Zwillinge, Waage, Skorpion, Schütze
+
+def _chara_odd(si: int, pada: bool = False) -> bool:
+    """Zählt die Chara Daśā von diesem Zeichen aus DIREKT (zodiakal)?
+
+    Zwei etablierte Schulen, die sich in genau den vier FIXEN Zeichen
+    unterscheiden (Stier, Löwe, Skorpion, Wassermann):
+
+      pada=False — nach der ZEICHENNUMMER: ungerade Zeichen (Widder,
+        Zwillinge, Löwe, Waage, Schütze, Wassermann) direkt. Variante von
+        K.N. Rao.
+      pada=True  — nach der FÜSSIGKEIT: ungeradefüssige Zeichen (Widder,
+        Stier, Zwillinge, Waage, Skorpion, Schütze) direkt. Jaimini-Sūtra-
+        Tradition (Sanjay Rath); so rechnet auch Kala.
+    """
+    return (si in _ODD_FOOTED) if pada else (si % 2 == 0)
 
 def _chara_count(from_si: int, to_si: int, direct: bool) -> int:
     return ((to_si - from_si) % 12 + 1) if direct else ((from_si - to_si) % 12 + 1)
@@ -1167,9 +1181,9 @@ def stronger_colord(sign_si: int, a: str, b: str,
     return (b, "tie → node")   # deterministic final fallback
 
 def _chara_years(sign_si: int, ps: Dict[str, int],
-                 lons: Dict[str, float]) -> Tuple[int, str, str]:
+                 lons: Dict[str, float], pada: bool = False) -> Tuple[int, str, str]:
     """Return (years, lord_used, reason). reason is '' for single-lord signs."""
-    direct = _chara_odd(sign_si)
+    direct = _chara_odd(sign_si, pada)
     sn = SIGNS[sign_si]
     if sn == "Scorpio":
         lord, reason = stronger_colord(sign_si, "Mars", "Ketu", ps, lons)
@@ -1194,13 +1208,14 @@ def _chara_antardashas(maha_si: int, maha_years: float, start_dt: datetime,
     return out
 
 def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
-                      lagna_si: int, birth_dt: datetime, span_years: float = 120.0) -> Dict:
-    direct = _chara_odd(lagna_si)
+                      lagna_si: int, birth_dt: datetime, span_years: float = 120.0,
+                      pada: bool = False) -> Dict:
+    direct = _chara_odd(lagna_si, pada)
     order = [((lagna_si + i) % 12 if direct else (lagna_si - i) % 12) for i in range(12)]
 
     durations, colords = {}, {}
     for si in range(12):
-        yrs, lord, reason = _chara_years(si, planet_signs, lons)
+        yrs, lord, reason = _chara_years(si, planet_signs, lons, pada)
         durations[si] = yrs
         if SIGNS[si] in ("Scorpio", "Aquarius"):
             colords[SIGNS[si]] = {"lord": lord, "reason": reason}
@@ -1226,6 +1241,7 @@ def build_chara_dasha(planet_signs: Dict[str, int], lons: Dict[str, float],
         cur = end; total += yrs; idx += 1
 
     return {"mahadashas": mahas, "current": current,
+            "convention": "pada" if pada else "sign-number",
             "direction": "direct (zodiacal)" if direct else "reverse",
             "durations": {SIGNS[si]: durations[si] for si in range(12)},
             "colords": colords}
@@ -2315,9 +2331,13 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
         lat, lon, datetime.now().year)
 
     jaimini = compute_jaimini(lons, lagna_idx)
-    chara_dasha = build_chara_dasha(
-        {p: planets[p]["sign_idx"] for p in planets if p != "Ascendant"},
-        lons, lagna_idx, local_dt.replace(tzinfo=None))
+    _chara_ps = {p: planets[p]["sign_idx"] for p in planets if p != "Ascendant"}
+    _chara_bd = local_dt.replace(tzinfo=None)
+    chara_dasha = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd)
+    # Zweite Schule zum Vergleich (Pada-Regel, wie Kala). Reine Anzeige —
+    # die Deutung arbeitet weiterhin mit 'chara_dasha'.
+    chara_dasha_pada = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
+                                         pada=True)
 
     panchang = compute_panchang(lons["Sun"], lons["Moon"], local_dt.isoweekday() % 7,
                                 planets["Moon"]["nakshatra"], planets["Moon"]["nak_lord"])
@@ -2405,6 +2425,7 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
         "varshaphala": varshaphala,
         "jaimini":     jaimini,
         "chara_dasha": chara_dasha,
+        "chara_dasha_pada": chara_dasha_pada,
         "panchang":    panchang,
         "yogas":       yogas,
         "upagrahas":   upagrahas,
