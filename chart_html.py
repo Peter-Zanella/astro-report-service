@@ -14,6 +14,12 @@ PLANET_ORDER = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu",
 PLANET_ABR   = {"Sun":"Su","Moon":"Mo","Mars":"Ma","Mercury":"Me",
                 "Jupiter":"Ju","Venus":"Ve","Saturn":"Sa","Rahu":"Ra","Ketu":"Ke",
                 "Uranus":"Ur","Neptune":"Ne","Pluto":"Pl"}
+# Die Chart-Zeichner kürzen unbekannte Namen auf zwei Zeichen
+# (PLANET_ABR.get(p, p[:2])). Für den Arudha-Chart wären A10 und A11 damit
+# beide zu "A1" geworden und mit dem Arudha Lagna kollidiert — deshalb hier
+# ausdrücklich hinterlegt.
+PLANET_ABR.update({f"A{i}": f"A{i}" for i in range(2, 12)})
+PLANET_ABR.update({"AL": "AL", "UL": "UL"})
 PLANET_ICON  = {"Sun":"☉","Moon":"☽","Mars":"♂","Mercury":"☿","Jupiter":"♃",
                 "Venus":"♀","Saturn":"♄","Rahu":"☊","Ketu":"☋",
                 "Uranus":"♅","Neptune":"♆","Pluto":"♇"}
@@ -463,6 +469,25 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         now=" (now)" if a else ""
         s=str(rd.get('start',''))[:10]; e=str(rd.get('end',''))[:10]
         chara_rows+=f"<tr class='{cls}'><td>{rd.get('sign','')}{now}</td><td>{s}</td><td>{e}</td><td>{rd.get('years','')} yrs</td></tr>"
+
+    # ── Arudha-Chart: die zwölf Bhāva-Arudhas (A1…A12) ───────────────────────
+    # Gezeichnet im Rahmen des natalen Lagna, damit die Häuser die gewohnten
+    # sind. Mehrere Arudhas dürfen im selben Zeichen zusammenfallen — das ist
+    # klassisch normal und wird nicht zusammengefasst.
+    _ap = (chart.get("jaimini", {}) or {}).get("arudha_padas", {}) or {}
+    sp_arudha = {i: [] for i in range(12)}
+    for _h in sorted(_ap, key=lambda x: int(x)):
+        _rec = _ap[_h]
+        sp_arudha[_rec["sign_idx"] % 12].append(_rec["label"])
+    arudha_svgs = (_chart_svgs(li, sp_arudha, "Arudha Padas · A1–A12")
+                   if _ap else "")
+    arudha_rows = ""
+    for _h in sorted(_ap, key=lambda x: int(x)):
+        _rec = _ap[_h]
+        _hl = " style='color:var(--ac);font-weight:600'" if _rec["label"] in ("AL", "UL") else ""
+        arudha_rows += (f"<tr><td{_hl}>{_rec['label']}</td><td>{_rec['house']}</td>"
+                        f"<td>{_rec['sign']}</td><td>{_rec['house_from_lagna']}</td>"
+                        f"<td style='color:var(--mu)'>{_rec['lord']}</td></tr>")
 
     # ── Zweite Chara-Schule zum Vergleich (Zeichennummer-Regel, K.N. Rao) ────
     # Massgeblich ist die Pada-Regel in 'chara_dasha'; beide Konventionen
@@ -1193,6 +1218,21 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <div class="ow" style="margin-top:16px"><table class="dt">
     <thead><tr><th>Abbr</th><th>Role</th><th>Planet</th><th>Sign</th><th>Deg</th><th>Effective</th></tr></thead>
     <tbody>{jai_rows}</tbody>
+  </table></div>
+
+  <p class="sh" style="margin-top:26px">Arudha Padas — die zwölf Sichtbarkeiten</p>
+  <p style="color:var(--mu);font-size:.88rem;line-height:1.55">
+  Jedes Haus hat neben seinem Inhalt ein <strong>Arudha</strong>: Man zählt vom
+  Haus zu seinem Herrn und dieselbe Zahl vom Herrn weiter. Fällt das Ergebnis
+  auf das Haus selbst oder das 7. davon, wird das 10. davon genommen. Während
+  das Haus zeigt, was <em>ist</em>, zeigt sein Arudha, was davon nach aussen
+  <em>erscheint</em>. <strong>AL</strong> (Arudha Lagna) ist das Bild der
+  Person, <strong>UL</strong> (Upapada) das der Ehe. Mehrere Arudhas können im
+  selben Zeichen zusammenfallen — das ist klassisch normal.</p>
+  {arudha_svgs}
+  <div class="ow" style="margin-top:12px"><table class="dt">
+    <thead><tr><th>Arudha</th><th>von Haus</th><th>Zeichen</th><th>Haus vom Lagna</th><th>Herr</th></tr></thead>
+    <tbody>{arudha_rows}</tbody>
   </table></div>
 </div>
 

@@ -1074,9 +1074,31 @@ def compute_jaimini(lons: Dict[str, float], lagna_si: int) -> Dict:
     twelfth_lord = SIGN_LORDS[SIGNS[twelfth_si]]
     ul_si = _arudha(twelfth_si, sign_of(lons[twelfth_lord])[0])
 
+    # ── Alle zwölf Bhāva-Arudhas (A1…A12) ────────────────────────────────────
+    # Für jedes Haus: vom Haus zu seinem Herrn zählen, dieselbe Zahl vom Herrn
+    # weiter; fällt das Ergebnis auf das Haus selbst oder das 7. davon, wird
+    # das 10. davon genommen (_arudha). A1 ist das Arudha Lagna, A12 das
+    # Upapada — beide werden unten unverändert einzeln weitergegeben.
+    _ARUDHA_LABELS = {1: "AL", 12: "UL"}
+    arudha_padas = {}
+    for _h in range(1, 13):
+        _h_si = (lagna_si + _h - 1) % 12
+        _h_lord = SIGN_LORDS[SIGNS[_h_si]]
+        _a_si = _arudha(_h_si, sign_of(lons[_h_lord])[0])
+        arudha_padas[_h] = {
+            "label": _ARUDHA_LABELS.get(_h, f"A{_h}"),
+            "house": _h,
+            "sign_idx": _a_si,
+            "sign": SIGNS[_a_si],
+            "lord": SIGN_LORDS[SIGNS[_a_si]],
+            "from_house_lord": _h_lord,
+            "house_from_lagna": (_a_si - lagna_si) % 12 + 1,
+        }
+
     return {
         "order": CHARA_KARAKAS_8,
         "karakas": karakas,
+        "arudha_padas": arudha_padas,
         "karaka_of": karaka_of,
         "atmakaraka": ak,
         "darakaraka": dk,
