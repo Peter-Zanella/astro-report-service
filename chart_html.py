@@ -638,8 +638,13 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         _by_m = _re_by.search(r"\b(1[89]\d\d|20\d\d)\b", str(m.get("birth","")))
         birth_year = int(_by_m.group(1)) if _by_m else 1900
     current_age = max(1, _dt2.date.today().year - birth_year)
+    # Die Liste muss das laufende Lebensjahr enthalten, sonst ist bei sehr
+    # alten Geburtsdaten nichts vorausgewählt und der Tab zeigt Jahr 1: Bei
+    # Geburt 1848 wäre das aktuelle Alter 178, die feste Obergrenze 100 hätte
+    # nur Jahre bis 1948 angeboten. Normale Charts behalten ihre 1–100.
+    _max_age = max(100, current_age + 5)
     vp_age_options = ""
-    for _a in range(1, 101):
+    for _a in range(1, _max_age + 1):
         _yr = birth_year + _a
         _sel = " selected" if _a == current_age else ""
         vp_age_options += f'<option value="{_a}"{_sel}>{_a} Jahre ({_yr})</option>'
