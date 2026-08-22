@@ -464,10 +464,11 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         s=str(rd.get('start',''))[:10]; e=str(rd.get('end',''))[:10]
         chara_rows+=f"<tr class='{cls}'><td>{rd.get('sign','')}{now}</td><td>{s}</td><td>{e}</td><td>{rd.get('years','')} yrs</td></tr>"
 
-    # ── Zweite Chara-Schule zum Vergleich (Pada-Regel, wie Kala) ─────────────
-    # Beide Konventionen unterscheiden sich in genau den vier fixen Zeichen;
-    # gezeigt werden die Dauern nebeneinander und beide laufenden Zeichen.
-    chara_p = chart.get("chara_dasha_pada", {}) or {}
+    # ── Zweite Chara-Schule zum Vergleich (Zeichennummer-Regel, K.N. Rao) ────
+    # Massgeblich ist die Pada-Regel in 'chara_dasha'; beide Konventionen
+    # unterscheiden sich in genau den vier fixen Zeichen. Gezeigt werden die
+    # Dauern nebeneinander und beide laufenden Zeichen.
+    chara_p = chart.get("chara_dasha_alt", {}) or {}
     _d_nr = chara.get("durations", {}) or {}
     _d_pa = chara_p.get("durations", {}) or {}
     chara_cmp_rows = ""
@@ -1143,12 +1144,12 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 
 <!-- CHARA DASHA -->
 <div class="tp" id="tab-chara">
-  <p class="sh">Chara Daśā (Jaimini) · Zeichennummer-Regel</p>
+  <p class="sh">Chara Daśā (Jaimini) · Pada-Regel</p>
   <p style="color:var(--mu);font-size:.88rem;line-height:1.55">
   Die Dauer eines Zeichens ist der Abstand zu seinem Herrn, minus 1. Die
   <strong>Zählrichtung</strong> wird in zwei Schulen verschieden bestimmt, und
   sie unterscheiden sich in genau den vier fixen Zeichen. Beide sind unten
-  aufgeführt — die Deutung im Bericht folgt dieser ersten.</p>
+  aufgeführt — massgeblich für Tab und Deutung ist die Pada-Regel.</p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Rāśi</th><th>Start</th><th>End</th><th>Years</th></tr></thead>
     <tbody>{chara_rows}</tbody>
@@ -1161,19 +1162,20 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 
   <p class="sh" style="margin-top:26px">Vergleich der beiden Schulen</p>
   <p style="color:var(--mu);font-size:.88rem;line-height:1.55">
-  <strong>Zeichennummer-Regel</strong> (K.N. Rao): ungerade Zeichen — Widder,
-  Zwillinge, Löwe, Waage, Schütze, Wassermann — werden direkt gezählt.<br>
   <strong>Pada-Regel</strong> (Jaimini-Sūtra-Tradition nach Sanjay Rath; so
   rechnet auch die Software Kala): ungeradefüssige Zeichen — Widder, Stier,
-  Zwillinge, Waage, Skorpion, Schütze — werden direkt gezählt.<br>
-  Laufendes Zeichen: <strong>{chara_cur}</strong> nach der Zeichennummer-Regel,
-  <strong>{chara_cur_pada}</strong> nach der Pada-Regel.</p>
+  Zwillinge, Waage, Skorpion, Schütze — werden direkt gezählt. Ihr folgen
+  dieser Tab und die Deutung.<br>
+  <strong>Zeichennummer-Regel</strong> (K.N. Rao): ungerade Zeichen — Widder,
+  Zwillinge, Löwe, Waage, Schütze, Wassermann — werden direkt gezählt.<br>
+  Laufendes Zeichen: <strong>{chara_cur}</strong> nach der Pada-Regel,
+  <strong>{chara_cur_pada}</strong> nach der Zeichennummer-Regel.</p>
   <div class="ow"><table class="dt">
-    <thead><tr><th>Rāśi</th><th>Zeichennummer</th><th>Pada</th><th></th></tr></thead>
+    <thead><tr><th>Rāśi</th><th>Pada</th><th>Zeichennummer</th><th></th></tr></thead>
     <tbody>{chara_cmp_rows}</tbody>
   </table></div>
 
-  <p class="sh" style="margin-top:26px">Zeitleiste nach der Pada-Regel</p>
+  <p class="sh" style="margin-top:26px">Zeitleiste nach der Zeichennummer-Regel</p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Rāśi</th><th>Start</th><th>End</th><th>Years</th></tr></thead>
     <tbody>{chara_p_rows}</tbody>

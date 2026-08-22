@@ -2333,11 +2333,14 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
     jaimini = compute_jaimini(lons, lagna_idx)
     _chara_ps = {p: planets[p]["sign_idx"] for p in planets if p != "Ascendant"}
     _chara_bd = local_dt.replace(tzinfo=None)
-    chara_dasha = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd)
-    # Zweite Schule zum Vergleich (Pada-Regel, wie Kala). Reine Anzeige —
-    # die Deutung arbeitet weiterhin mit 'chara_dasha'.
-    chara_dasha_pada = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
-                                         pada=True)
+    # Massgeblich ist die PADA-Regel (Jaimini-Sūtra-Tradition, wie Kala) —
+    # sie speist Tab und Deutung.
+    chara_dasha = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
+                                    pada=True)
+    # Zweite Schule nur zum Vergleich (Zeichennummer-Regel, K.N. Rao).
+    # Reine Anzeige, erreicht keinen Faktenblock.
+    chara_dasha_alt = build_chara_dasha(_chara_ps, lons, lagna_idx, _chara_bd,
+                                        pada=False)
 
     panchang = compute_panchang(lons["Sun"], lons["Moon"], local_dt.isoweekday() % 7,
                                 planets["Moon"]["nakshatra"], planets["Moon"]["nak_lord"])
@@ -2425,7 +2428,7 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
         "varshaphala": varshaphala,
         "jaimini":     jaimini,
         "chara_dasha": chara_dasha,
-        "chara_dasha_pada": chara_dasha_pada,
+        "chara_dasha_alt": chara_dasha_alt,
         "panchang":    panchang,
         "yogas":       yogas,
         "upagrahas":   upagrahas,
