@@ -1025,6 +1025,7 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 /* Viṃśottarī-Navigation: ausgewählte Zeile (nicht zwingend die laufende) */
 .vimsel{{background:rgba(123,111,255,.16);box-shadow:inset 3px 0 0 var(--ac)}}
 .vimsel td{{font-weight:600}}
+.vimclick{{cursor:pointer}}
 /* Dasha box */
 .dbox{{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:16px 20px;margin-bottom:20px;max-width:380px}}
 .dl{{color:var(--mu);font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;align-self:center}}
@@ -1414,8 +1415,8 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 var _VIM={vim_json};
 var _VIM_MI={vim_mi}, _VIM_AI={vim_ai};
 function _vimRow(cells,active,sel,handler){{
-  var cls=(active?'act':'')+(sel?' vimsel':'');
-  var h=handler?" onclick=\""+handler+"\" style='cursor:pointer'":"";
+  var cls=(active?'act':'')+(sel?' vimsel':'')+(handler?' vimclick':'');
+  var h=handler?" onclick='"+handler+"'":"";
   return "<tr class='"+cls+"'"+h+"><td>"+cells.join("</td><td>")+"</td></tr>";
 }}
 function vimRender(){{
