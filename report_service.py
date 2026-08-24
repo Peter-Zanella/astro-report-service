@@ -471,7 +471,28 @@ def health():
         eng = "swiss-ephemeris"
     except ImportError:
         eng = "fallback"
-    return JSONResponse({"ok": True, "engine": eng})
+    # Baustand-Marker: Beantwortet ohne Quelltext-Lesen, welcher Commit läuft
+    # und ob eine bestimmte Neuerung schon drin ist. RENDER_GIT_COMMIT setzt
+    # Render selbst; 'features' prüft den tatsächlich geladenen Code, nicht
+    # eine gepflegte Liste.
+    import inspect as _insp
+    _src = ""
+    try:
+        _src = _insp.getsource(form_html)
+    except Exception:
+        pass
+    return JSONResponse({
+        "ok": True,
+        "engine": eng,
+        "commit": (_c[:8] if (_c := (os.environ.get("RENDER_GIT_COMMIT")
+                                     or os.environ.get("SOURCE_VERSION")))
+                   else "unbekannt"),
+        "test_mode": TEST_MODE,
+        "features": {
+            "varsha_year": "varsha_year" in _src,
+            "q_health": "q_health" in _src,
+        },
+    })
 
 
 @app.get("/report", response_class=HTMLResponse)
