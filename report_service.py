@@ -495,6 +495,17 @@ def health():
     })
 
 
+# Bestellformulare tragen eine Session-ID und dürfen nie aus dem Cache kommen:
+# Nach einem Deploy zeigte der Browser sonst weiter das alte Formular — samt
+# fehlender neuer Felder — obwohl der Server längst das neue ausliefert.
+_NO_STORE = {"Cache-Control": "no-store, no-cache, must-revalidate",
+             "Pragma": "no-cache"}
+
+
+def _form_response(html: str, status: int = 200) -> HTMLResponse:
+    return HTMLResponse(html, status_code=status, headers=_NO_STORE)
+
+
 @app.get("/report", response_class=HTMLResponse)
 def report_form(session_id: str = "", depth: str = "", key: str = ""):
     if not session_id:
@@ -509,11 +520,11 @@ def report_form(session_id: str = "", depth: str = "", key: str = ""):
         return HTMLResponse(msg_html("Zahlung prüfen",
                             escape(info.get("error", "Zahlung nicht bestätigt.")), "err"), 402)
     if info.get("depth") == "partner":
-        return HTMLResponse(partner_form_html(session_id, info))
+        return _form_response(partner_form_html(session_id, info))
     if info.get("depth") == "frage":
         return RedirectResponse(
             url=f"/report-frage?session_id={session_id}", status_code=303)
-    return HTMLResponse(form_html(session_id, info))
+    return _form_response(form_html(session_id, info))
 
 
 @app.post("/generate")
@@ -915,7 +926,7 @@ def prasna_page(session_id: str = "", key: str = ""):
     if not ok:
         return HTMLResponse(msg_html("Zahlung prüfen",
                             escape(info.get("error", "Zahlung nicht bestätigt.")), "err"), 402)
-    return HTMLResponse(_prasna_form_html(session_id, info))
+    return _form_response(_prasna_form_html(session_id, info))
 
 
 @app.post("/prasna-generate")
