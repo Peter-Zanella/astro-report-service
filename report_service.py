@@ -353,6 +353,25 @@ def form_html(session_id: str, info: dict) -> str:
 </div>"""
     else:
         questions_block = ""
+    # Jahresbericht: Der Kunde wählt, welches Jahr gedeutet wird. Ohne Auswahl
+    # nimmt die Engine das laufende Solarrückkehr-Jahr.
+    if info.get("depth") == "year":
+        _now_y = _dt.date.today().year
+        _opts = "".join(
+            f'<option value="{_y}"{" selected" if _y == _now_y else ""}>{_y}</option>'
+            for _y in range(_now_y - 1, _now_y + 6))
+        year_block = f"""
+<div style="border:1px solid {PAL['line']};border-radius:6px;padding:14px 16px;margin:14px 0">
+<label style="font-weight:600">Welches Jahr soll der Bericht deuten?</label>
+<select name="varsha_year">{_opts}</select>
+<p class="muted" style="font-size:.8rem;margin-top:8px">Das Jahreshoroskop
+(Varshaphala) beginnt nicht am 1. Januar, sondern an deinem
+Solarrückkehr-Punkt — dem Moment, in dem die Sonne wieder exakt ihre
+Geburtsposition erreicht. Gewählt wird das Jahr, in dem dieser Punkt
+liegt.</p>
+</div>"""
+    else:
+        year_block = ""
     test = info.get("test")
     cur_depth = info.get("depth", "premium")
     banner = ('<p class="muted" style="background:rgba(201,168,76,.1);border:1px dashed #c9a84c;'
@@ -390,7 +409,7 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 <input name="occupation" placeholder="z.B. Lehrerin, Ingenieur"></div></div>
 <label>Aktuelle Lebensumstände <span style="color:{PAL['muted']};font-weight:400">(optional, für gezieltere Deutung)</span></label>
 <textarea name="context" rows="3" placeholder="z.B. berufliche Neuorientierung, Familiengründung geplant, gesundheitliche Fragen …" style="width:100%;padding:11px 12px;border:1px solid {PAL['line']};border-radius:4px;background:{PAL['paper2']};color:{PAL['ink']};font-size:1rem;font-family:inherit;resize:vertical"></textarea>
-{questions_block}
+{questions_block}{year_block}
 <div><label>Sprache</label><select name="lang"><option value="de">Deutsch</option>
 <option value="en">English</option></select></div></div>
 {depth_field}
@@ -479,7 +498,7 @@ def generate(request: Request,
              gender: str = Form(""), occupation: str = Form(""), context: str = Form(""),
              b_day: str = Form(""), b_month: str = Form(""), b_year: str = Form(""),
              q1: str = Form(""), q2: str = Form(""), q3: str = Form(""),
-             q_health: str = Form("")):
+             q_health: str = Form(""), varsha_year: str = Form("")):
     if not _rate_ok(_client_ip(request), limit=10, window=600.0):
         return HTMLResponse(msg_html("Zu viele Anfragen",
                             "Bitte warte einen Moment und versuche es erneut.", "err"), 429)
@@ -518,8 +537,13 @@ def generate(request: Request,
         if not loc:
             return HTMLResponse(msg_html("Ort nicht gefunden",
                                 "Bitte Stadt und Land prüfen.", "err"), 400)
+        try:
+            _vy = int(varsha_year) if varsha_year.strip() else None
+        except ValueError:
+            _vy = None
         chart = E.generate_chart(y, mo, d, hh, mm, loc["lat"], loc["lon"], loc["offset"],
-                                 loc.get("label", city), name, gender)
+                                 loc.get("label", city), name, gender,
+                                 varsha_year=_vy)
         if "/" in str(loc.get("iana", "")):
             chart["meta"]["tzname"] = loc["iana"]
         # Optional user context — used only for interpretation, never for calculation

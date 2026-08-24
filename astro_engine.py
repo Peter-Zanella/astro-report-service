@@ -2300,7 +2300,8 @@ def compute_bhavabala(planets, lagna_idx, asc_lon, shadbala) -> Dict:
 
 def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
                    lat:float, lon:float, tz_offset:float,
-                   location:str="", name:str="", gender:str="") -> Dict:
+                   location:str="", name:str="", gender:str="",
+                   varsha_year:Optional[int]=None) -> Dict:
     """Compute a complete Jyotiṣa birth chart (data only, no rendering)."""
     local_dt = datetime(year,month,day,hour,minute,
                         tzinfo=timezone(timedelta(hours=tz_offset)))
@@ -2364,9 +2365,24 @@ def generate_chart(year:int, month:int, day:int, hour:int, minute:int,
     d10_full = compute_divisional_full(lons, 10)
     d4_full  = compute_divisional_full(lons, 4)
 
+    # Jahr des Varshaphala. Ohne Vorgabe das laufende Solarrückkehr-Jahr:
+    # Liegt die diesjährige Rückkehr noch in der Zukunft (Geburtstag später im
+    # Jahr), gilt noch die vorjährige — sonst deutete der Bericht ein Jahr,
+    # das für die Person noch gar nicht begonnen hat.
+    if varsha_year is None:
+        _vy = datetime.now().year
+        try:
+            _now = datetime.utcnow()
+            _jd_now = julian_day(_now.year, _now.month, _now.day,
+                                 _now.hour + _now.minute / 60.0)
+            if find_solar_return_jd(lons["Sun"], month, day, _vy) > _jd_now:
+                _vy -= 1
+        except Exception:
+            pass
+        varsha_year = _vy
     varshaphala = compute_varshaphala(
         year, month, day, lons["Sun"], lagna_idx,
-        lat, lon, datetime.now().year)
+        lat, lon, int(varsha_year))
 
     jaimini = compute_jaimini(lons, lagna_idx)
     _chara_ps = {p: planets[p]["sign_idx"] for p in planets if p != "Ascendant"}
