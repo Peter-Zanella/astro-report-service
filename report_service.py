@@ -330,6 +330,9 @@ button:hover{{background:#d4b560}}
 // Date mask: user types digits only (numeric keypad on mobile); dots are
 // inserted automatically → TT.MM.JJJJ. Lets the birth YEAR be typed directly,
 // unlike a native date picker which forces spinning through the calendar.
+// Testmodus: Das Jahresfeld gehört nur zum Jahresbericht.
+function toggleVarsha(v){{var b=document.getElementById('varsha-block');
+if(b){{b.style.display=(v==='year')?'block':'none';}}}}
 function fmtDate(el){{var v=el.value.replace(/[^0-9]/g,'').slice(0,8);
 el.value = v.length>4 ? v.slice(0,2)+'.'+v.slice(2,4)+'.'+v.slice(4)
          : v.length>2 ? v.slice(0,2)+'.'+v.slice(2) : v;}}
@@ -355,13 +358,17 @@ def form_html(session_id: str, info: dict) -> str:
         questions_block = ""
     # Jahresbericht: Der Kunde wählt, welches Jahr gedeutet wird. Ohne Auswahl
     # nimmt die Engine das laufende Solarrückkehr-Jahr.
-    if info.get("depth") == "year":
+    # Im TESTMODUS wird die Stufe erst im Formular gewählt — dann muss der
+    # Block schon da sein und per JS ein-/ausgeblendet werden, sonst fehlt er
+    # genau dann, wenn man auf "Jahr" umstellt.
+    _is_year = info.get("depth") == "year"
+    if _is_year or info.get("test"):
         _now_y = _dt.date.today().year
         _opts = "".join(
             f'<option value="{_y}"{" selected" if _y == _now_y else ""}>{_y}</option>'
             for _y in range(_now_y - 1, _now_y + 6))
         year_block = f"""
-<div style="border:1px solid {PAL['line']};border-radius:6px;padding:14px 16px;margin:14px 0">
+<div id="varsha-block" style="display:{'block' if _is_year else 'none'};border:1px solid {PAL['line']};border-radius:6px;padding:14px 16px;margin:14px 0">
 <label style="font-weight:600">Welches Jahr soll der Bericht deuten?</label>
 <select name="varsha_year">{_opts}</select>
 <p class="muted" style="font-size:.8rem;margin-top:8px">Das Jahreshoroskop
@@ -381,7 +388,8 @@ liegt.</p>
         sel = " selected" if val == cur_depth else ""
         return f'<option value="{val}"{sel}>{label}</option>'
     depth_field = ("" if not test else
-                   '<label>Stufe (nur Test)</label><select name="depth">'
+                   '<label>Stufe (nur Test)</label>'
+                   '<select name="depth" onchange="toggleVarsha(this.value)">'
                    + _opt("premium", "Premium")
                    + _opt("basis", "Basis")
                    + _opt("year", "Jahr (Varshaphala)")
