@@ -416,7 +416,7 @@ danach direkt zum Anschauen und als PDF-Download zur Verfügung.</p>
 <textarea name="context" rows="3" placeholder="z.B. berufliche Neuorientierung, Familiengründung geplant, gesundheitliche Fragen …" style="width:100%;padding:11px 12px;border:1px solid {PAL['line']};border-radius:4px;background:{PAL['paper2']};color:{PAL['ink']};font-size:1rem;font-family:inherit;resize:vertical"></textarea>
 {questions_block}{year_block}
 <div><label>Sprache</label><select name="lang"><option value="de">Deutsch</option>
-<option value="en">English</option></select></div></div>
+<option value="en">English</option></select></div>
 {depth_field}
 <button type="submit">Bericht erstellen</button>
 </form>
@@ -475,12 +475,15 @@ def health():
     # und ob eine bestimmte Neuerung schon drin ist. RENDER_GIT_COMMIT setzt
     # Render selbst; 'features' prüft den tatsächlich geladenen Code, nicht
     # eine gepflegte Liste.
-    import inspect as _insp
+    # Das Formular wird PROBEWEISE GERENDERT, nicht der Quelltext abgesucht:
+    # Nur so unterscheidet sich "Code enthält das Feld" von "Server liefert es
+    # aus". Synthetische Eingaben, keine Sitzung, keine Nebenwirkung.
     _src = ""
     try:
-        _src = _insp.getsource(form_html)
-    except Exception:
-        pass
+        _src = form_html("HEALTHCHECK",
+                         {"depth": "premium", "label": "Health", "test": True})
+    except Exception as _fe:
+        _src = f"RENDER-FEHLER: {type(_fe).__name__}"
     return JSONResponse({
         "ok": True,
         "engine": eng,
@@ -488,9 +491,10 @@ def health():
                                      or os.environ.get("SOURCE_VERSION")))
                    else "unbekannt"),
         "test_mode": TEST_MODE,
-        "features": {
-            "varsha_year": "varsha_year" in _src,
-            "q_health": "q_health" in _src,
+        "renders": {
+            "varsha_year": 'name="varsha_year"' in _src,
+            "q_health": 'name="q_health"' in _src,
+            "error": _src.startswith("RENDER-FEHLER") and _src or None,
         },
     })
 
