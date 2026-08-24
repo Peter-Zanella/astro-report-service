@@ -436,6 +436,30 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
                 s=str(ad.get('start',''))[:10]; e=str(ad.get('end',''))[:10]
                 antar_rows+=f"<tr class='{cls}'><td>{md.get('planet','')}/{ad.get('planet','')}{now}</td><td>{s}</td><td>{e}</td></tr>"
 
+    # ── Daten für die anklickbare Viṃśottarī-Navigation ─────────────────────
+    # Kompakt: [planet, start, end, aktiv, jahre, [antar…]] mit
+    # [planet, start, end, aktiv, [pratyantar…]] und [planet, start, end, aktiv].
+    import json as _json_vim
+    _vim_data, _vim_mi, _vim_ai = [], 0, 0
+    for _i, md in enumerate(dashas.get("mahadashas", [])):
+        _ads = []
+        for _j, ad in enumerate(md.get("antardashas", [])):
+            _pds = [[pd.get("planet", ""), str(pd.get("start", ""))[:10],
+                     str(pd.get("end", ""))[:10], 1 if pd.get("active") else 0]
+                    for pd in ad.get("pratyantardashas", [])]
+            if ad.get("active"):
+                _vim_ai = _j
+            _ads.append([ad.get("planet", ""), str(ad.get("start", ""))[:10],
+                         str(ad.get("end", ""))[:10], 1 if ad.get("active") else 0, _pds])
+        if md.get("active"):
+            _vim_mi = _i
+        _vim_data.append([md.get("planet", ""), str(md.get("start", ""))[:10],
+                          str(md.get("end", ""))[:10], 1 if md.get("active") else 0,
+                          md.get("years", ""), _ads])
+    # '<' escapen: landet roh in einem <script>-Block (vgl. _cmp_a_json).
+    vim_json = _json_vim.dumps(_vim_data, separators=(",", ":")).replace("<", "\u003c")
+    vim_mi, vim_ai = _vim_mi, _vim_ai
+
     # Pratyantardaśās der aktiven Mahādaśā — die dritte Ebene, vollständig:
     # neun Antardaśās zu je neun Pratyantardaśās, also 81 Zeilen. Jeder
     # Antardaśā-Block bekommt oben eine feine Trennlinie, damit die Gruppen
@@ -998,6 +1022,9 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 .av-h{{color:var(--gd);font-weight:600}}.av-l{{color:var(--rd)}}.av-m{{color:var(--ac)}}
 .sb-s{{color:var(--gd)}}.sb-w{{color:var(--rd)}}
 .act td{{color:var(--ac)}}.act{{background:rgba(201,168,76,.05)}}
+/* Viṃśottarī-Navigation: ausgewählte Zeile (nicht zwingend die laufende) */
+.vimsel{{background:rgba(123,111,255,.16);box-shadow:inset 3px 0 0 var(--ac)}}
+.vimsel td{{font-weight:600}}
 /* Dasha box */
 .dbox{{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:16px 20px;margin-bottom:20px;max-width:380px}}
 .dl{{color:var(--mu);font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;align-self:center}}
@@ -1151,19 +1178,22 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <p class="sh">Aktuelle Periode</p>
   {dasha_cur}
   <p class="sh">Mahādaśā Timeline</p>
+  <p style="color:var(--mu);font-size:.86rem;margin:-6px 0 8px">
+  Eine Mahādaśā anklicken, um ihre Antardaśās zu sehen — und dort eine
+  Antardaśā für die Pratyantardaśās. Beim Öffnen steht die laufende Periode.</p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Planet</th><th>Start</th><th>End</th><th>Duration</th></tr></thead>
-    <tbody>{maha_rows}</tbody>
+    <tbody id="vim-maha">{maha_rows}</tbody>
   </table></div>
-  <p class="sh">Antaradaśās (aktive Mahādaśā)</p>
+  <p class="sh">Antaradaśās <span id="vim-h-antar" style="color:var(--mu);font-weight:400"></span></p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Maha / Antar</th><th>Start</th><th>End</th></tr></thead>
-    <tbody>{antar_rows}</tbody>
+    <tbody id="vim-antar">{antar_rows}</tbody>
   </table></div>
-  <p class="sh">Pratyantardaśās (alle Antardaśās der aktiven Mahādaśā)</p>
+  <p class="sh">Pratyantardaśās <span id="vim-h-prat" style="color:var(--mu);font-weight:400"></span></p>
   <div class="ow"><table class="dt">
     <thead><tr><th>Maha / Antar / Pratyantar</th><th>Start</th><th>End</th></tr></thead>
-    <tbody>{prat_rows}</tbody>
+    <tbody id="vim-prat">{prat_rows}</tbody>
   </table></div>
 </div>
 
@@ -1377,6 +1407,44 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 
 </div>
 <script>
+// ── Viṃśottarī: anklickbare Navigation Maha → Antar → Pratyantar ──────────
+// Serverseitig steht bereits die laufende Periode in den Tabellen; dieses
+// Skript ersetzt nur die Inhalte beim Klick. Ohne JS bleibt der Bericht also
+// vollständig lesbar (wichtig für den Druck).
+var _VIM={vim_json};
+var _VIM_MI={vim_mi}, _VIM_AI={vim_ai};
+function _vimRow(cells,active,sel,handler){{
+  var cls=(active?'act':'')+(sel?' vimsel':'');
+  var h=handler?" onclick=\""+handler+"\" style='cursor:pointer'":"";
+  return "<tr class='"+cls+"'"+h+"><td>"+cells.join("</td><td>")+"</td></tr>";
+}}
+function vimRender(){{
+  var m=_VIM[_VIM_MI]; if(!m) return;
+  var mb=document.getElementById('vim-maha'); if(!mb) return;
+  mb.innerHTML=_VIM.map(function(x,i){{
+    return _vimRow([x[0]+(x[3]?' (now)':''),x[1],x[2],x[4]+" yrs"],
+                   x[3],i===_VIM_MI,"vimPickMaha("+i+")");
+  }}).join("");
+  var a=m[5][_VIM_AI]||m[5][0];
+  document.getElementById('vim-antar').innerHTML=m[5].map(function(x,j){{
+    return _vimRow([m[0]+"/"+x[0]+(x[3]?' (now)':''),x[1],x[2]],
+                   x[3],j===_VIM_AI,"vimPickAntar("+j+")");
+  }}).join("");
+  document.getElementById('vim-prat').innerHTML=(a?a[4]:[]).map(function(x){{
+    return _vimRow([m[0]+"/"+a[0]+"/"+x[0]+(x[3]?' (now)':''),x[1],x[2]],x[3],false,null);
+  }}).join("");
+  document.getElementById('vim-h-antar').textContent="von "+m[0];
+  document.getElementById('vim-h-prat').textContent=a?("von "+m[0]+" / "+a[0]):"";
+}}
+function vimPickMaha(i){{
+  _VIM_MI=i;
+  var ads=_VIM[i][5], k=0;
+  for(var j=0;j<ads.length;j++){{ if(ads[j][3]) k=j; }}   // laufende, sonst erste
+  _VIM_AI=k; vimRender();
+}}
+function vimPickAntar(j){{ _VIM_AI=j; vimRender(); }}
+document.addEventListener('DOMContentLoaded',vimRender);
+
 function showTab(id,btn){{
   document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
