@@ -2685,7 +2685,8 @@ def compute_ashtakuta(chart_a, chart_b, male="a"):
     nak_names = [n for n, _ in NAKSHATRAS]
     na = nak_names.index(ma["nakshatra"]); nb = nak_names.index(mb["nakshatra"])
     sa, sb = ma["sign_idx"], mb["sign_idx"]
-    la, lb = ma["nak_lord"], mb["nak_lord"]
+    # Graha Maitri compares the lords of the two Moon signs (classical Ashtakoota).
+    la, lb = SIGN_LORDS[ma["sign"]], SIGN_LORDS[mb["sign"]]
     deg_a = ma.get("lon", sa * 30) % 30   # Moon's degree within its sign
     deg_b = mb.get("lon", sb * 30) % 30
 
