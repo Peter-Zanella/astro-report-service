@@ -20,6 +20,11 @@ PLANET_ABR   = {"Sun":"Su","Moon":"Mo","Mars":"Ma","Mercury":"Me",
 # ausdrücklich hinterlegt.
 PLANET_ABR.update({f"A{i}": f"A{i}" for i in range(2, 12)})
 PLANET_ABR.update({"AL": "AL", "UL": "UL"})
+# Upagrahas im Rāśi-/Navāṃśa-Chart (gleiche Kürzel wie die Web-App)
+UPA_ABR = {"Gulika": "Gk", "Mandi": "Md", "Kala": "Kl", "Mrityu": "Mr",
+           "Ardhaprahara": "Ap", "Yamaghantaka": "Yk", "Dhuma": "Dh",
+           "Vyatipata": "Vy", "Parivesha": "Pv", "Indrachapa": "Ic", "Upaketu": "Uk"}
+PLANET_ABR.update(UPA_ABR)
 PLANET_ICON  = {"Sun":"☉","Moon":"☽","Mars":"♂","Mercury":"☿","Jupiter":"♃",
                 "Venus":"♀","Saturn":"♄","Rahu":"☊","Ketu":"☋",
                 "Uranus":"♅","Neptune":"♆","Pluto":"♇"}
@@ -64,6 +69,7 @@ _NI_LABEL = {
 def _planet_color(pname):
     if pname in ("Sun","Moon","Jupiter","Mars"): return "#f5e6a3"
     if pname in ("Rahu","Ketu"): return "#cc99ff"
+    if pname in UPA_ABR: return "#9aa0b4"
     return "#a8d4ff"
 
 
@@ -786,6 +792,24 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
             "Tag-/Nachtbogens (Lagna am Abschnittsbeginn, Māndi = Mitte des "
             "Saturn-Abschnitts; Sonnenauf-/-untergang nach Hindu-Konvention: "
             "Scheibenmitte, ohne Refraktion).</p>")
+        # Rāśi und Navāṃśa mit den Upagrahas (Grahas grau abgesetzt dazu)
+        _sp_u1 = {i: list(v) for i, v in _build_sign_planets(pls).items()}
+        _sp_u9 = {i: list(v) for i, v in sp_d9.items()}
+        for _k in _order:
+            _r = _upa.get(_k)
+            if not _r:
+                continue
+            _sp_u1[_r["sign_idx"] % 12].append(_k)
+            if "d9_sign_idx" in _r:
+                _sp_u9[_r["d9_sign_idx"] % 12].append(_k)
+        upagraha_html += (
+            "<div class='cg' style='margin-top:14px'>"
+            "<div class='cc'><h3>Rāśi + Upagrahas</h3>"
+            + _chart_svgs(li, _sp_u1, "Rāśi + Upagrahas",
+                          planet_data={**pls, **_upa})
+            + "</div><div class='cc'><h3>Navāṃśa + Upagrahas</h3>"
+            + _chart_svgs(d9li, _sp_u9, "D9 + Upagrahas")
+            + "</div></div>")
         # Kurzdeutungen (upagraha_db.py — optional wie eclipse_db/pada_db)
         try:
             import upagraha_db as _udb
@@ -892,6 +916,14 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
         import eclipse_db
     except Exception:
         eclipse_db = None
+    try:
+        import eclipse_hits as _eh
+    except Exception:
+        _eh = None
+    _natal = chart.get("lons") or {}
+    _PDE = {"Lagna": "Lagna", "Sun": "Sonne", "Moon": "Mond", "Mars": "Mars",
+            "Mercury": "Merkur", "Jupiter": "Jupiter", "Venus": "Venus",
+            "Saturn": "Saturn", "Rahu": "Rāhu", "Ketu": "Ketu"}
     eclipse_html = ""
     if eclipse_db and eclipse_db.available():
         _em = eclipse_db.meta()
@@ -916,9 +948,20 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
                     _vis_html = "<span style='color:#666'>—</span>"
                 _dd, _mm, _dy = e["day"], e["month"], e["year"]
                 _date_de = f"{_dd:02d}.{_mm:02d}.{_dy}"
+                # Treffer auf Geburtspunkte: ☌ ☍ □ innerhalb 3° (eclipse_hits.py)
+                _hits = (_eh.hits(e["lon"], _natal) if _eh and _natal and "lon" in e
+                         else [])
+                _hit_html = ", ".join(
+                    f"<span title='{h['label_de']} · Orbis {h['orb']:.1f}°'>"
+                    f"{h['symbol']} {_PDE.get(h['point'], h['point'])} "
+                    f"<span style='color:var(--mu)'>{h['orb']:.1f}°</span></span>"
+                    for h in _hits) or "<span style='color:#555'>—</span>"
+                if _hits:
+                    _kcls += " ecl-hit"
                 _yr_rows += (
                     f"<tr class='{_kcls}'>"
                     f"<td style='white-space:nowrap'>{_date_de}</td>"
+                    f"<td style='white-space:nowrap'>{_hit_html}</td>"
                     f"<td style='white-space:nowrap'>{e.get('time_ut','')} UT</td>"
                     f"<td><span style='font-size:1.05em'>{_icon}</span> {_kind_de}</td>"
                     f"<td>{e.get('type','')}</td>"
@@ -930,7 +973,7 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
                 )
             _rows_by_year += (
                 f"<tbody class='ecl-year-group' data-year='{_yr}' id='ecl-y-{_yr}'>"
-                f"<tr class='ecl-year-hdr'><td colspan='8'>{_yr}</td></tr>"
+                f"<tr class='ecl-year-hdr'><td colspan='9'>{_yr}</td></tr>"
                 f"{_yr_rows}</tbody>"
             )
         _year_opts = "".join(f"<option value='{_y}'>{_y}</option>" for _y in sorted(_grouped.keys()))
@@ -953,10 +996,16 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
             f"</div>"
             f"<div style='margin:14px 0;display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--mu)'>"
             f"<span>☀ Sonnenfinsternis (Sonne verfinstert)</span>"
-            f"<span>☾ Mondfinsternis (Mond verfinstert)</span></div>"
+            f"<span>☾ Mondfinsternis (Mond verfinstert)</span>"
+            f"<span>Treffer: ☌ Konjunktion · ☍ Opposition · □ Quadrat zu Lagna "
+            f"und Grahas des Geburtshoroskops, Orbis 3°</span></div>"
+            f"<label style='display:flex;align-items:center;gap:8px;font-size:.85rem;"
+            f"color:var(--mu);margin:0 0 12px;cursor:pointer'>"
+            f"<input type='checkbox' id='ecl-hits-only' onchange='filterEclipseHits(this.checked)'> "
+            f"Nur Finsternisse mit Treffern im Geburtshoroskop</label>"
             f"<div id='ecl-scroll' style='max-height:600px;overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bd);border-radius:8px'>"
             f"<table class='ptab ecl-tab'><thead><tr>"
-            f"<th>Datum</th><th>Zeit</th><th>Art</th><th>Typ</th><th>Zeichen</th>"
+            f"<th>Datum</th><th>Treffer</th><th>Zeit</th><th>Art</th><th>Typ</th><th>Zeichen</th>"
             f"<th>Grad</th><th>Nakshatra</th><th>Wädenswil</th>"
             f"</tr></thead>{_rows_by_year}</table></div>"
         )
@@ -967,6 +1016,77 @@ def build_html(chart:Dict, interpretation:Optional[str]=None,
             "wurde noch nicht erzeugt. Führe einmalig <code>python compute_eclipses.py</code> "
             "aus und lade die entstandene Datei ins Repo hoch.</p>"
         )
+
+    # ── Geburtszeit-Empfindlichkeit (rectify.py — optional wie medical) ──────
+    # Wie lange Lagna, Teilungs-Lagnas und Mond-Nakshatra um die angegebene
+    # Geburtszeit herum gleich bleiben, und wann sie wechseln (± 2 h).
+    _SDE = {"Aries": "Widder", "Taurus": "Stier", "Gemini": "Zwillinge",
+            "Cancer": "Krebs", "Leo": "Löwe", "Virgo": "Jungfrau", "Libra": "Waage",
+            "Scorpio": "Skorpion", "Sagittarius": "Schütze", "Capricorn": "Steinbock",
+            "Aquarius": "Wassermann", "Pisces": "Fische"}
+    _RDE = {"lagna": "Lagna (D1)", "d9": "Navāṃśa-Lagna (D9)",
+            "d10": "Daśāṃśa-Lagna (D10)", "d3": "Drekkāṇa-Lagna (D3)",
+            "d4": "Chaturthāṃśa-Lagna (D4)", "moon_sign": "Mondzeichen",
+            "moon_nak": "Mond-Nakshatra · Pada"}
+
+    def _sde(v):
+        for _en, _de in _SDE.items():
+            v = v.replace(_en, _de)
+        return v
+
+    def _mins(x, sign):
+        if x is None:
+            return f"{sign}über 2 h"
+        return f"{sign}{x:.0f} min" if x < 90 else f"{sign}{x / 60:.1f} h"
+
+    rectify_html = ""
+    try:
+        import rectify as _rect
+        _rm = chart.get("meta", {})
+        _rs = _rect.sweep(_rm["birth_y"], _rm["birth_mo"], _rm["birth_d"],
+                          _rm["birth_h"], _rm["birth_min"], _rm["lat"], _rm["lon"],
+                          _rm["offset"], 120)
+        _frows = ""
+        for f in _rs["factors"]:
+            _tight = min(x for x in (f["minus"], f["plus"], 999) if x is not None)
+            _col = ("#e08080" if _tight < 5 else "#e0c080" if _tight < 15
+                    else "var(--tx)")
+            _frows += (
+                f"<tr><td>{_RDE.get(f['key'], f['label'])}</td>"
+                f"<td><strong>{_il(_sde(f['value']))}</strong></td>"
+                f"<td>{f['from'] or '—'}</td><td>{f['to'] or '—'}</td>"
+                f"<td style='color:{_col}'>{_mins(f['minus'], '−')} / {_mins(f['plus'], '+')}</td></tr>")
+        _crows = ""
+        for c in _rs["changes"]:
+            if abs(c["offset"]) > 30:
+                continue
+            _crows += (
+                f"<tr><td>{c['at']}</td><td>{'+' if c['offset'] > 0 else '−'}"
+                f"{abs(c['offset']):.1f} min</td><td>{_RDE.get(c['key'], c['label'])}</td>"
+                f"<td>{_il(_sde(c['from']))} → <strong>{_il(_sde(c['to']))}</strong></td></tr>")
+        rectify_html = (
+            f"<p class='sh'>Geburtszeit · Empfindlichkeit (angegeben {_rs['birth']})</p>"
+            "<p style='color:var(--mu);font-size:.85rem;line-height:1.6;margin:8px 0 12px'>"
+            "Wie genau muss die Geburtszeit stimmen? Die Tabelle zeigt, von wann bis wann "
+            "jeder zeitkritische Faktor seinen Wert behält (geprüft ± 2 Stunden, auf die "
+            "Sekunde). Ein kleiner Spielraum bedeutet: Schon wenige Minuten Abweichung "
+            "ändern dieses Teilhoroskop. Die Planetenzeichen bleiben in diesem Fenster "
+            "praktisch immer gleich.</p>"
+            "<div class='ow'><table class='dt'><thead><tr><th>Faktor</th><th>Wert</th>"
+            "<th>gilt ab</th><th>gilt bis</th><th>Spielraum</th></tr></thead><tbody>"
+            + _frows + "</tbody></table></div>"
+            + ("<p class='sh' style='margin-top:22px'>Wechsel innerhalb ± 30 Minuten</p>"
+               "<div class='ow'><table class='dt'><thead><tr><th>Uhrzeit</th>"
+               "<th>Abstand</th><th>Faktor</th><th>Wechsel</th></tr></thead><tbody>"
+               + _crows + "</tbody></table></div>" if _crows else
+               "<p style='color:var(--mu);margin-top:16px'>Innerhalb ± 30 Minuten "
+               "wechselt keiner dieser Faktoren.</p>")
+            + "<p style='font-size:.76rem;color:var(--mu);margin-top:10px'>Gleiche "
+            "Berechnung wie das Horoskop (Swiss Ephemeris, Lahiri); die Zeitzone bleibt "
+            "wie angegeben. Bei unsicherer Geburtszeit lohnt es sich, die Deutung der "
+            "Teilhoroskope mit kleinem Spielraum vorsichtig zu lesen.</p>")
+    except Exception:
+        rectify_html = ""
 
     # ── HTML ──────────────────────────────────────────────────────────────────
     return f"""<!DOCTYPE html>
@@ -1057,6 +1177,7 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 .ecl-sol td{{background:rgba(201,168,76,.05)}}
 .ecl-lun td{{background:rgba(136,136,187,.05)}}
 .ecl-tab tbody tr:hover td{{background:rgba(255,255,255,.04)}}
+.ecl-tab tr.ecl-hit td:nth-child(2){{color:var(--ac)}}
 @media (max-width:640px){{
   .pw{{padding:14px 10px 60px}}
   .tb{{padding:8px 10px;font-size:.76rem}}
@@ -1118,6 +1239,7 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
   <button class="tb" onclick="showTab('chart',this)">Chart</button>
   <button class="tb" onclick="showTab('planets',this)">Planeten &amp; Häuser</button>
   <button class="tb" onclick="showTab('divisional',this)">Divisional</button>
+  {'<button class="tb" onclick="showTab(&#39;birthtime&#39;,this)">Geburtszeit</button>' if rectify_html else ''}
   <button class="tb" onclick="showTab('dasha',this)">Viṃśottarī</button>
   <button class="tb" onclick="showTab('chara',this)">Chara Daśā</button>
   <button class="tb" onclick="showTab('jaimini',this)">Jaimini</button>
@@ -1175,6 +1297,10 @@ body::before{{content:'';position:fixed;inset:0;z-index:-1;background:radial-gra
 </div>
 
 <!-- VIMSHOTTARI DASHA -->
+<div class="tp" id="tab-birthtime">
+  {rectify_html}
+</div>
+
 <div class="tp" id="tab-dasha">
   <p class="sh">Aktuelle Periode</p>
   {dasha_cur}
@@ -1467,6 +1593,12 @@ function printAll(){{
 function togglePada(id){{
   var el=document.getElementById(id);
   if(el) el.style.display = (el.style.display==='none' ? '' : 'none');
+}}
+function filterEclipseHits(on){{
+  document.querySelectorAll('.ecl-tab tbody tr').forEach(function(r){{
+    if(r.classList.contains('ecl-year-hdr')) return;
+    r.style.display = (on && !r.classList.contains('ecl-hit')) ? 'none' : '';
+  }});
 }}
 function filterEclipseYear(yr){{
   var groups=document.querySelectorAll('.ecl-year-group');

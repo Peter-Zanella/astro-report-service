@@ -174,26 +174,28 @@ def _deg_in_sign(pls: Dict, p: str) -> float:
     return (lon % 30.0) if lon is not None else -99.0
 
 
-#: Knoten ohne 7. Aspekt — siehe _aspected_houses
-_NO_SEVENTH = ("Rahu", "Ketu")
+#: Knoten ohne Graha-Drishti — siehe _aspect_offsets
+_NODES = ("Rahu", "Ketu")
+
+
+def _aspect_offsets(p: str) -> List[int]:
+    """Aspekt-Distanzen (7 = Gegenschein, dazu Sonderaspekte) von Planet p.
+
+    Rāhu und Ketu wirken in der medizinischen Auswertung NUR durch Besetzung:
+    Parāśara (BPHS) gibt den Knoten keine eigene Drishti, der 5./9.-Aspekt
+    ist spätere, umstrittene Tradition. Ausserhalb dieses Moduls bleibt die
+    Engine-Konvention unverändert.
+    """
+    if p in _NODES:
+        return []
+    return [7] + [o for o in _SPECIAL_ASPECTS.get(p, []) if o != 7]
 
 
 def _aspected_houses(p: str, h: int) -> List[int]:
-    """Häuser, die Planet p aus Haus h per Graha-Drishti aspektiert.
-
-    Der 7. Aspekt gilt für alle Grahas AUSSER Rāhu und Ketu: Für die Knoten
-    werden in der medizinischen Auswertung nur die Sonderaspekte (5./9.)
-    gewertet, weil ihr Gegenschein-Aspekt in den Klassikern umstritten ist und
-    bei der Melothesie sonst jede Knotenachse zwei Körperregionen zugleich
-    belastet. Ausserhalb dieses Moduls bleibt die Engine-Konvention
-    (7. Aspekt für alle) unverändert.
-    """
+    """Häuser, die Planet p aus Haus h per Graha-Drishti aspektiert."""
     if not h:
         return []
-    out = [] if p in _NO_SEVENTH else [((h + 5) % 12) + 1]   # 7. Haus
-    for off in _SPECIAL_ASPECTS.get(p, []):
-        out.append(((h + off - 2) % 12) + 1)
-    return out
+    return [((h + off - 2) % 12) + 1 for off in _aspect_offsets(p)]
 
 
 def _influences_on_house(chart: Dict, house: int) -> List[str]:
@@ -203,6 +205,15 @@ def _influences_on_house(chart: Dict, house: int) -> List[str]:
     asp = [p for p in GRAHAS
            if p not in occ and house in _aspected_houses(p, pls.get(p, {}).get("house", 0))]
     return occ + asp
+
+
+def _infl_name(chart: Dict, p: str, house: int) -> str:
+    """Planetenname für die Herleitung; aspektierende Planeten mit Herkunft,
+    damit »6. Haus: Ketu« nicht als Besetzung gelesen wird."""
+    if p in ((chart.get("occupants") or {}).get(house, []) or []):
+        return DE.get(p, p)
+    ph = chart.get("planets", {}).get(p, {}).get("house", 0)
+    return f"{DE.get(p, p)} (Aspekt aus H{ph})"
 
 
 def _moon_brightness(chart: Dict) -> Tuple[str, float]:
@@ -252,7 +263,7 @@ def compute_doshas(chart: Dict) -> Dict:
             v = _dosha_vote(p, moon_state)
             if v:
                 score[v[0]] += v[1]
-                parts.append(f"{DE.get(p, p)} → {v[0]}")
+                parts.append(f"{_infl_name(chart, p, 1)} → {v[0]}")
         lines.append(("Lagna", ", ".join(parts) if parts else "—"))
     else:
         sign = chart.get("lagna")
@@ -268,7 +279,7 @@ def compute_doshas(chart: Dict) -> Dict:
         v = _dosha_vote(p, moon_state)
         if v:
             score[v[0]] += v[1]
-            parts.append(f"{DE.get(p, p)} → {v[0]}")
+            parts.append(f"{_infl_name(chart, p, 6)} → {v[0]}")
     lines.append(("6. Haus", ", ".join(parts) if parts else "unbesetzt und unaspektiert"))
 
     # (3) Mond: Planeteneinflüsse dominieren, Helligkeit sonst/sekundär.
@@ -280,7 +291,7 @@ def compute_doshas(chart: Dict) -> Dict:
             v = _dosha_vote(p, moon_state)
             if v:
                 score[v[0]] += v[1]
-                parts.append(f"{DE.get(p, p)} → {v[0]}")
+                parts.append(f"{_infl_name(chart, p, mh)} → {v[0]}")
         parts.append(f"(Mond selbst: {moon_state})")
     else:
         v = _dosha_vote("Moon", moon_state)
@@ -507,7 +518,7 @@ def compute_focus(chart: Dict, kap: Dict, top_n: int = 3) -> Dict:
             sign_score[s] += w
             sign_who[s].append(f"{DE[p]} ({w})")
             # Graha-Drishti wirkt im Whole-Sign identisch auf Zeichen
-            for off in [7] + [o for o in _SPECIAL_ASPECTS.get(p, [])]:
+            for off in _aspect_offsets(p):
                 ts = (s + off - 1) % 12
                 sign_score[ts] += w * 0.5
                 sign_who[ts].append(f"{DE[p]}-Aspekt")
